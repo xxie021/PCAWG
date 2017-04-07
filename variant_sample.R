@@ -1,17 +1,18 @@
-library(VariantAnnotation)
+Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
 library(SomaticSignatures)
 
 # Constants
-kCategoryTypeI <- c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
-kColourTypeI <- c("deepskyblue", "black", "tomato",
-                  "gray", "yellowgreen", "pink")
+kNtBase <- c("A", "C", "G", "T")
+kMutBase <- c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
+
+kMutBaseColour <- c("deepskyblue", "black", "tomato",
+                    "gray", "yellowgreen", "pink")
 
 # Inheritance
 # Top: VariantSample
-# 2nd Level: SsmSample, SimSample
-# 3rd Level: SsmTypeI > SsmSample
+# 2nd Level: SingleSSM
 VariantSample <- function(vcf, ref, id = "", name = "") {
-  if (!(class(vcf) %in% c("CollapsedVCF", "ExpandedVCF"))) {
+  if (class(vcf) != "CollapsedVCF") {
     stop("Invalid VCF data found", call. = F)
   }
   
@@ -24,10 +25,6 @@ VariantSample <- function(vcf, ref, id = "", name = "") {
   }, error = function(e) {
     stop("Invalid reference sequence found", call. = F)
   })
-  
-  #if (class(vcf) == "CollapsedVCF") {
-  #  vcf = expand(vcf)
-  #}
   
   if (!is.character(id)) {
     warning("'id' is not type of character. Converted", call. = F)
@@ -54,119 +51,106 @@ VariantSample <- function(vcf, ref, id = "", name = "") {
   return(me)
 }
 
-SsmSample <- function(vcf, ref, id = "", name = "") {
+SingleSSM <- function(vcf, ref, id = "", name = "") {
+  class.name <- "SingleSSM"
+  
+  cat("[", class.name, "] Constructing class ...\n", sep = "")
   me <- VariantSample(vcf, ref, id, name)
-  idx <- which(isSubstitution(me$vcf))
+  idx <- which(isSNV(me$vcf))
   
   seq.ctx <- mutationContext(as(vcf[idx], "VRanges"), ref)
   sampleNames(seq.ctx) <- id
-  #motif.pct <- motifMatrix(seq.ctx, group = "sampleNames")
   motif.num <- motifMatrix(seq.ctx, group = "sampleNames", normalize = F)
-  #total.base.mutation <- sum(motif.num)
-  #set.ref <- ref(me$vcf)[idx]
-  #set.alt <- alt(me$vcf)[idx]
   
-  me[["idx"]] <- idx
-  me[["total.mut"]] <- sum(motif.num)
-  #me[["seq.ctx"]] <- seq.ctx
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  me[["c2a.ctx"]] <- CountBaseMutationWithContext(motif.num, "c", "a")
-  #me[["set.ref"]] <- set.ref
-  #me[["set.alt"]] <- set.alt
+  me$idx <- idx
+  me$total.mut <- sum(motif.num)
+  me$c2a.ctx <- CountBaseSubstitutionWithContext(motif.num, "c", "a")
+  me$c2g.ctx <- CountBaseSubstitutionWithContext(motif.num, "c", "g")
+  me$c2t.ctx <- CountBaseSubstitutionWithContext(motif.num, "c", "t")
+  me$t2a.ctx <- CountBaseSubstitutionWithContext(motif.num, "t", "a")
+  me$t2c.ctx <- CountBaseSubstitutionWithContext(motif.num, "t", "c")
+  me$t2g.ctx <- CountBaseSubstitutionWithContext(motif.num, "t", "g")
   
-  class(me) <- append(class(me), "SsmSample")
+  cat("[", class.name, "] Creating spectrum data ...\n", sep = "")
+  mut.base.count <- c(sum(me$c2a.ctx), sum(me$c2g.ctx), sum(me$c2t.ctx),
+                      sum(me$t2a.ctx), sum(me$t2c.ctx), sum(me$t2g.ctx))
+  me$data.spectrum <- data.frame(count = mut.base.count,
+                                 percentage = sapply(mut.base.count,
+                                                     function(x) {
+                                                       x / me$total.mut
+                                                     }))
+  cat("[", class.name, "] Spectrum data created\n", sep = "")
+  
+  cat("[", class.name, "] Creating heatmap data ...\n", sep = "")
+  df.c2a <- as.data.frame(matrix(me$c2a.ctx, nrow = 4, byrow = T))
+  df.c2g <- as.data.frame(matrix(me$c2g.ctx, nrow = 4, byrow = T))
+  df.c2t <- as.data.frame(matrix(me$c2t.ctx, nrow = 4, byrow = T))
+  df.t2a <- as.data.frame(matrix(me$t2a.ctx, nrow = 4, byrow = T))
+  df.t2c <- as.data.frame(matrix(me$t2c.ctx, nrow = 4, byrow = T))
+  df.t2g <- as.data.frame(matrix(me$t2g.ctx, nrow = 4, byrow = T))
+  
+  df.snv <- cbind(df.c2a, df.c2g, df.c2t, df.t2a, df.t2c, df.t2g) / me$total.mut
+  colnames(df.snv) <- sort(apply(expand.grid(kMutBase, kNtBase),
+                                 1, paste, collapse=" "))
+  df.snv$`5base` <- kNtBase
+  df.snv$sample.name <- rep(GenerateSampleName(me, "short"), 4)
+  me$data.hmap <- df.snv
+  cat("[", class.name, "] Heatmap data created\n", sep = "")
+  
+  class(me) <- append(class(me), class.name)
+  cat("[", class.name, "] Class constructed\n", sep = "")
+  
   return(me)
 }
 
-SsmTypeI <- function(vcf, id = "", name = "") {
-  me <- SsmSample(vcf, id, name)
+SingleSIM <- function(vcf, ref = "", id = "", name = "") {
+  class.name <- "SingleSIM"
   
-  me[["idx.c2a"]] <- GetIndexOfSsmTypeI(me, "c", "a")
-  me[["idx.c2g"]] <- GetIndexOfSsmTypeI(me, "c", "g")
-  me[["idx.c2t"]] <- GetIndexOfSsmTypeI(me, "c", "t")
-  me[["idx.t2a"]] <- GetIndexOfSsmTypeI(me, "t", "a")
-  me[["idx.t2c"]] <- GetIndexOfSsmTypeI(me, "t", "c")
-  me[["idx.t2g"]] <- GetIndexOfSsmTypeI(me, "t", "g")
+  cat("[", class.name, "] Constructing class ...\n", sep = "")
+  me <- VariantSample(vcf, ref, id, name)
+  idx.ins <- which(isInsertion(me$vcf))
+  idx.del <- which(isDeletion(me$vcf))
   
-  idx.count <- c(length(me$idx.c2a), length(me$idx.c2g), length(me$idx.c2t),
-                 length(me$idx.t2a), length(me$idx.t2c), length(me$idx.t2g))
-  me[["out.data"]] <- data.frame(count = idx.count,
-                                 percentage = sapply(idx.count, function(x) {
-                                   x / sum(idx.count)
-                                 }))
+  me$idx.ins <- idx.ins
+  me$idx.del <- idx.del
   
-  class(me) <- append(class(me), "SsmTypeI")
+  class(me) <- append(class(me), class.name)
+  cat("[", class.name, "] Class constructed\n", sep = "")
+  
   return(me)
 }
 
-CountBaseMutationWithContext <- function(obj, nt.ref, nt.alt) {
-  UseMethod("CountBaseMutationWithContext", obj)
+CountBaseSubstitutionWithContext <- function(obj, nt.ref, nt.alt) {
+  UseMethod("CountBaseSubstitutionWithContext", obj)
 }
 
-CountBaseMutationWithContext.matrix <- function(obj, nt.ref, nt.alt) {
+CountBaseSubstitutionWithContext.matrix <- function(obj, nt.ref, nt.alt) {
   mut.base <- toupper(paste0(nt.ref, nt.alt))
   mut.matched.ctx <- obj[which(sapply(strsplit(row.names(obj), " "),
                                       function(x) x[1]) == mut.base), ]
   
+  as.data.frame(matrix(mut.matched.ctx / sum(mut.matched.ctx),
+                       nrow = 4, byrow = T))
   return(mut.matched.ctx)
 }
 
-GetIndexOfSsmTypeI <- function(obj, nt.ref, nt.alt,
-                               complementarity = TRUE,
-                               sort = FALSE) {
-  UseMethod("GetIndexOfSsmTypeI", obj)
+GenerateSampleName <- function(obj, out.type = NA) {
+  UseMethod("GenerateSampleName", obj)
 }
 
-GetIndexOfSsmTypeI.SsmSample <- function(obj, nt.ref, nt.alt,
-                                         complementarity = TRUE,
-                                         sort = FALSE) {
-  if (is.character(nt.ref)) {
-    nt.ref <- DNAString(nt.ref)
-  }
-  if (is.character(nt.alt)) {
-    nt.alt <- DNAString(nt.alt)
-  }
+GenerateSampleName.VariantSample <- function(obj, out.type = NA) {
+  out.type <- ifelse(is.na(out.type), "normal", tolower(trimws(out.type)))
   
-  idx.ssm <- intersect(which(obj$set.ref == nt.ref),
-                       which(obj$set.alt == nt.alt))
-  if (complementarity) {
-    idx.ssm.comp <- intersect(which(obj$set.ref == complement(nt.ref)),
-                              which(obj$set.alt == complement(nt.alt)))
-    idx.ssm <- c(idx.ssm, idx.ssm.comp)
-  }
-  
-  if (sort) {
-    idx.ssm <- sort(idx.ssm)
-  }
-  
-  return(idx.ssm)
-}
-
-GenFileNamePrefix <- function(obj, full = FALSE) {
-  UseMethod("GenFileNamePrefix", obj)
-}
-
-GenFileNamePrefix.VariantSample <- function(obj, full = FALSE) {
-  if (full && obj$id != "" && obj$name != "") {
+  if (out.type == "full" && obj$id != "" && obj$name != "") {
     return(paste0(obj$id, ".", obj$name))
   }
   
-  return(ifelse(obj$id == "", obj$name, obj$id))
+  normal.name <- ifelse(obj$id == "", obj$name, obj$id)
+  return(ifelse(out.type == "short", substr(normal.name, 1, 8), normal.name))
 }
 
-Summary <- function(obj, smry.out.path = NA) {
-  if (!is.na(smry.out.path) && !dir.exists(smry.out.path)) {
-    dir.create(smry.out.path)
-  }
-  UseMethod("Summary", obj)
-}
-
-Summary.SsmTypeI <- function(obj, smry.out.path = NA) {
-  smry.data <- obj$out.data
+Summary.SingleSSM <- function(obj, out.path = NA) {
+  smry.data <- obj$data.spectrum
   smry.data$percentage <- round(smry.data$percentage * 100, digits = 2)
   row.names(smry.data) <- c("C:G > A:T", "C:G > G:C", "C:G > T:A",
                             "T:A > A:T", "T:A > C:G", "T:A > G:C")
@@ -176,50 +160,53 @@ Summary.SsmTypeI <- function(obj, smry.out.path = NA) {
   print(smry.data)
   cat("\n")
   
-  if (!is.na(smry.out.path)) {
-    write.table(smry.data, file = paste0(smry.out.path,
-                                         tolower(GenFileNamePrefix(obj)),
-                                         ".summary.tsv"),
+  if (!is.na(out.path)) {
+    write.table(smry.data,
+                file = paste0(out.path, tolower(GenerateSampleName(obj)),
+                              ".summary.tsv"),
                 quote = F, sep = "\t", col.names = NA)
   }
 }
 
-PlotSignature.SsmTypeI <- function(obj, plotter, chart.type = "pct") {
-  cat("Start plotting single sample SSM Type I signature")
-  
-  plot.name <- GenFileNamePrefix(obj)
-  plot.title <- paste0("Type I Signature of\nSample \"", plot.name, "\"")
-  plot.out.name <- paste0(tolower(plot.name), ".sig.ssm.typeI")
+PlotSpectrum.SingleSSM <- function(obj, plotter, chart.type = "pct") {
+  class.name <- tail(class(obj), n = 1)
+
+  cat("[", class.name, "] Start plotting spectrum", sep = "")
   chart.type <- tolower(trimws(chart.type))
+  plot.name <- GenerateSampleName(obj)
+  plot.title.suffix <- paste0("of Base Substitutions for \nSample \"",
+                              plot.name, "\"")
+  plot.out.name <- tolower(paste0(plot.name, ".spectrum.",
+                                  chart.type, ".", class.name))
   
   if (chart.type == "num") {
-    plot.data <- data.frame(obj$out.data$count, row.names = kCategoryTypeI)
-    plot.out.name <- paste0(plot.out.name, ".num")
+    plot.data <- data.frame(obj$data.spectrum$count, row.names = kMutBase)
+    plot.title <- paste("Count", plot.title.suffix)
     cat(" (in Number) ...\n")
     
     ggplot(plot.data, aes(x = row.names(plot.data), y = plot.data)) +
-      geom_bar(stat = "identity", fill = rev(kColourTypeI), width = 0.4) +
+      geom_bar(stat = "identity", fill = rev(kMutBaseColour), width = 0.4) +
       scale_x_discrete(limits = rev(row.names(plot.data))) +
       scale_y_continuous(labels = scales::comma) +
       coord_flip() +
       labs(title = plot.title, y = "Number of Mutations") +
-      plotter$plot.theme + plotter$axis.theme
+      plotter$theme
   } else if (chart.type == "pct") {
-    plot.data <- data.frame(obj$out.data$percentage, row.names = kCategoryTypeI)
-    plot.out.name <- paste0(plot.out.name, ".pct")
+    plot.data <- data.frame(obj$data.spectrum$percentage, row.names = kMutBase)
+    plot.title <- paste("Percentage", plot.title.suffix)
     cat(" (in Percentage) ...\n")
     
     ggplot(plot.data, aes(x = row.names(plot.data), y = plot.data)) +
-      geom_bar(stat = "identity", fill = kColourTypeI, width = 0.4) +
+      geom_bar(stat = "identity", fill = kMutBaseColour, width = 0.4) +
       scale_y_continuous(breaks = seq(0, max(plot.data), by = 0.05),
                          labels = scales::percent) +
       ggtitle(plot.title) +
-      plotter$plot.theme + plotter$axis.theme
+      plotter$theme
   } else {
     stop("Chart type is not supported", call. = F)
   }
   
   ggsave(paste0(plotter$out.path, plot.out.name, ".", plotter$type))
-  
-  cat("Plotting completed in", toupper(plotter$type) ,"\n")
+  cat("[", class.name, "] Plotting completed in ", toupper(plotter$type), "\n",
+      sep = "")
 }

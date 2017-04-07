@@ -22,11 +22,11 @@ VariantSample <- function(vcf, ref, id = "", name = "") {
     stop("Invalid reference sequence found", call. = F)
   }
   
-  tryCatch({
-    countFa(ref)
-  }, error = function(e) {
-    stop("Invalid reference sequence found", call. = F)
-  })
+  #tryCatch({
+  #  countFa(ref)
+  #}, error = function(e) {
+  #  stop("Invalid reference sequence found", call. = F)
+  #})
   
   if (!is.character(id)) {
     warning("'id' is not type of character. Converted", call. = F)
@@ -53,16 +53,16 @@ VariantSample <- function(vcf, ref, id = "", name = "") {
   return(me)
 }
 
-SingleSSM <- function(vcf, ref, id = "", name = "", size.ctx = 3) {
+SingleSSM <- function(vcf, ref, id = "", name = "") {
   class.name <- "SingleSSM"
   
   cat("[", class.name, "] Constructing class ...\n", sep = "")
   me <- VariantSample(vcf, ref, id, name)
   idx <- which(isSNV(me$vcf))
   
-  seq.ctx <- mutationContext(as(vcf[idx], "VRanges"), ref, k = size.ctx)
+  seq.ctx <- mutationContext(as(vcf[idx], "VRanges"), ref)
   sampleNames(seq.ctx) <- id
-  motif.num <- motifMatrix(seq.ctx, group = "sampleNames", normalize = F)
+  motif.num <- motifMatrix(seq.ctx, normalize = F)
   
   me$idx <- idx
   me$mut.total <- sum(motif.num)
@@ -119,8 +119,6 @@ CountBaseSubstitutionWithContext <- function(obj, nt.ref, nt.alt) {
   mut.matched.ctx <- obj[which(sapply(strsplit(row.names(obj), " "),
                                       function(x) x[1]) == mut.base), ]
   
-  as.data.frame(matrix(mut.matched.ctx / sum(mut.matched.ctx),
-                       nrow = 4, byrow = T))
   return(mut.matched.ctx)
 }
 

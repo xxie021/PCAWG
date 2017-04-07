@@ -2,7 +2,7 @@ args <- commandArgs(trailingOnly = T)
 #args <- c("", "vcf.gz", "refseq.fasta", "pdf", "Lung", "Ovary")
 
 # Constants
-kMinArgLength <- 4
+kMinArgLength <- 3
 
 if (length(args) < kMinArgLength) {
   stop("Missing arguments", call. = F)
@@ -31,7 +31,7 @@ if (!exists("VariantSet", mode = "function")) {
 }
 
 files.per.tumour <- split(files, f = files$histology_abbreviation)
-singlessm.set.per.tumour <- lapply(files.per.tumour, function(f) {
+bin <- lapply(files.per.tumour, function(f) {
   singlessm.set <- mapply(function(fname, id, name) {
     tryCatch({
       cat("Loading VCF file: \"", basename(fname), "\" ...\n", sep = "")
@@ -48,27 +48,5 @@ singlessm.set.per.tumour <- lapply(files.per.tumour, function(f) {
   name = f$tumor_wgs_aliquot_id,
   SIMPLIFY = F)
   
-  return(SsmSampleSet(singlessm.set, f$histology_abbreviation[1]))
-})
-
-if (!exists("XPlotter", mode = "function")) {
-  source("plotter.R")
-}
-
-if (tolower(args[kMinArgLength]) %in% c("jpg", "jpeg")) {
-  plotter <- JpgPlotter(plot.theme.extra = kHeatmapTheme)
-} else {
-  plotter <- PdfPlotter(plot.theme.extra = kHeatmapTheme)
-}
-
-bin <- lapply(singlessm.set.per.tumour, function(set) {
-  minor.types <- CheckMinorMutationTypes(set)
-  if (length(minor.types) > 0) {
-    cat("Minor mutation types (<=1%): ", minor.types, "\n", sep = "")
-    stop("Minor mutation types exist", call. = F)
-  }
-  
-  PlotHeatmap(set, plotter)
-  Summary(set, "mut.ctx", out.path = "summary_out/")
-  Summary(set, "heatmap", out.path = "summary_out/")
+  SaveMutationCounts(SsmSampleSet(singlessm.set, f$histology_abbreviation[1]))
 })

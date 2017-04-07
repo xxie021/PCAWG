@@ -88,7 +88,33 @@ CheckMinorMutationTypes <- function(obj, threshold = "0.01") {
     stop("'obj' is not a type or a subtype of VariantSet", call. = F)
   }
   
-  return(names(which(rowSums(obj$mut.ctx) / obj$mut.total <= threshold)))
+  return(names(which(cumsum(
+    sort(rowSums(obj$mut.ctx) / obj$mut.total))) <= threshold))
+}
+
+SaveMutationCounts <- function(obj, out.path = "data_out/") {
+  set.class <- tail(class(obj), n = 1)
+  
+  if (!"VariantSet" %in% class(obj)) {
+    stop("'obj' is not a type or a subtype of VariantSet", call. = F)
+  }
+  
+  out.path <- trimws(out.path)
+  if (is.na(out.path)) {
+    out.path <- ""
+  }
+  if (out.path != "" && !dir.exists(out.path)) {
+    dir.create(out.path)
+  }
+  out.file.prefix <- ifelse(set.class == "SsmSampleSet", obj$tumour, "wg")
+  out.file <- paste0(out.path, tolower(out.file.prefix), ".mut.counts.RData")
+  mut.ctx <- obj$mut.ctx
+  
+  cat("[", set.class, "] Saving mutation counts of \"",
+      out.file.prefix, "\" ...\n", sep = "")
+  save(mut.ctx, file = out.file)
+  cat("[", set.class, "] Mutation counts of \"",
+      out.file.prefix, "\" saved\n", sep = "")
 }
 
 Summary.VariantSet <- function(obj, type, out.path = NA) {

@@ -3,6 +3,7 @@ args <- commandArgs(trailingOnly = T)
 
 # Constants
 kMinArgLength <- 4
+kDataFilePath <- "data_out"
 
 if (length(args) < kMinArgLength) {
   stop("Missing arguments", call. = F)
@@ -26,13 +27,13 @@ if (length(files$tumor_wgs_aliquot_id) == 0) {
   stop("No associated VCF files found", call. = F)
 }
 
-if (!exists("SampleSet", mode = "function")) {
-  source("sample_set.R")
+if (!exists("VariantSet", mode = "function")) {
+  source("variant_set.R")
 }
 
 files.per.tumour <- split(files, f = files$histology_abbreviation)
 singlessm.set.per.tumour <- lapply(files.per.tumour, function(f) {
-  singlessm.ssm.set <- mapply(function(fname, id, name) {
+  singlessm.set <- mapply(function(fname, id, name) {
     tryCatch({
       cat("Loading VCF file: \"", basename(fname), "\" ...\n", sep = "")
       raw.vcf <- readVcf(fname, "hg19", ScanVcfParam(info = NA, samples = NA))
@@ -48,7 +49,14 @@ singlessm.set.per.tumour <- lapply(files.per.tumour, function(f) {
   name = f$tumor_wgs_aliquot_id,
   SIMPLIFY = F)
   
-  return(SingleSsmSet(singlessm.ssm.set, f$histology_abbreviation[1]))
+  if (!dir.exists(kDataFilePath)) {
+    dir.create(kDataFilePath)
+  }
+  data.file <- paste0(kDataFilePath, "/", tolower(f$histology_abbreviation[1]),
+                      ".RData")
+  save(singlessm.set, file = data.file)
+  
+  return(SsmSampleSet(singlessm.set, f$histology_abbreviation[1]))
 })
 
 if (!exists("XPlotter", mode = "function")) {
@@ -62,7 +70,13 @@ if (tolower(args[kMinArgLength]) %in% c("jpg", "jpeg")) {
 }
 
 bin <- lapply(singlessm.set.per.tumour, function(set) {
+  minor.types <- CheckMinorMutationTypes(set)
+  if (length(minor.types) > 0) {
+    cat("Minor mutation types (<=1%): ", minor.types, "\n", sep = "")
+    stop("Minor mutation types exist", call. = F)
+  }
+  
   PlotHeatmap(set, plotter)
+  Summary(set, "mut.ctx", out.path = "summary_out/")
   Summary(set, "heatmap", out.path = "summary_out/")
-  Summary(set, "heatmap.comp.num", out.path = "summary_out/")
 })

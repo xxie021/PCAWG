@@ -28,8 +28,8 @@ if (length(files$tumor_wgs_aliquot_id) == 0) {
   stop("No associated VCF files found", call. = F)
 }
 
-if (!exists("SampleSet", mode = "function")) {
-  source("sample_set.R")
+if (!exists("VariantSet", mode = "function")) {
+  source("variant_set.R")
 }
 
 files.per.tumour <- split(files, f = files$histology_abbreviation)
@@ -50,7 +50,7 @@ singlessm.set.per.tumour <- lapply(files.per.tumour, function(f) {
   name = f$tumor_wgs_aliquot_id,
   SIMPLIFY = F)
   
-  return(SingleSsmSet(singlessm.ssm.set, f$histology_abbreviation[1],
+  return(SsmSampleSet(singlessm.ssm.set, f$histology_abbreviation[1],
                       order.base = kOrderBase))
 })
 
@@ -66,5 +66,5 @@ if (tolower(args[kMinArgLength]) %in% c("jpg", "jpeg")) {
 
 bin <- lapply(singlessm.set.per.tumour, function(set) {
   PlotSpectrum(set, plotter, kOrderDesc)
-  Summary(set, "spectrum", out.path = "summary_out/")
+  Summary(set, "mut.base", out.path = "summary_out/")
 })

@@ -91,7 +91,7 @@ Summary <- function(obj, ..., out.path = NA) {
   UseMethod("Summary", obj)
 }
 
-PlotSpectrum <- function(obj, plotter, ...) {
+PlotBaseSpectrum <- function(obj, plotter, ...) {
   if (class(plotter)[2] != "XPlotter") {
     stop("Invaild XPlotter found", call. = F)
   }
@@ -99,7 +99,7 @@ PlotSpectrum <- function(obj, plotter, ...) {
   if (!dir.exists(plotter$out.path)) {
     dir.create(plotter$out.path)
   }
-  UseMethod("PlotSpectrum", obj)
+  UseMethod("PlotBaseSpectrum", obj)
 }
 
 PlotHeatmap <- function(obj, plotter, ...) {

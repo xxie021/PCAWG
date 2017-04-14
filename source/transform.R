@@ -34,33 +34,35 @@ Transform3 <- function(mut.ctx, type, ...) {
     stop("Invalid data type of 'type'. Must be string", call. = F)
   }
   
+  type <- tolower(type)
   args <- list(...)
   
   return(switch(type,
-         base.summary = {
-           if ("percentage" %in% names(args)) {
-             .BaseTransform2summary(mut.ctx, args$percentage)
-           } else {
-             .BaseTransform2summary(mut.ctx)
-           }
-         },
-         base.spectrum = {
-           if ("order" %in% names(args)) {
-             .BaseTransform2spectrum(mut.ctx, args$order)
-           } else {
-             .BaseTransform2spectrum(mut.ctx)
-           }
-         },
-         base.ctx.summary = .BaseContextTransform2summary(mut.ctx),
-         base.ctx.heatmap.plot = .BaseContextTransform2heatmapPlot(mut.ctx),
-         base.ctx.heatmap.real = {
-           if ("data.type" %in% names(args)) {
-             .BaseContextTransform2heatmapReal(mut.ctx, args$data.type)
-           } else {
-             .BaseContextTransform2heatmapReal(mut.ctx)
-           }
-         },
-         stop("Unrecognised transform type", call. = F)
+                base.summary = {
+                  if ("percentage" %in% names(args)) {
+                    .BaseTransform2summary(mut.ctx, args$percentage)
+                  } else {
+                    .BaseTransform2summary(mut.ctx)
+                  }
+                },
+                base.spectrum = {
+                  if ("order" %in% names(args)) {
+                    .BaseTransform2spectrum(mut.ctx, args$order)
+                  } else {
+                    .BaseTransform2spectrum(mut.ctx)
+                  }
+                },
+                base.ctx.summary = .BaseContextTransform2summary(mut.ctx),
+                base.ctx.heatmap.plot = 
+                  .BaseContextTransform2heatmapPlot(mut.ctx),
+                base.ctx.heatmap.real = {
+                  if ("data.type" %in% names(args)) {
+                    .BaseContextTransform2heatmapReal(mut.ctx, args$data.type)
+                  } else {
+                    .BaseContextTransform2heatmapReal(mut.ctx)
+                  }
+                },
+                stop("Unrecognised transform type", call. = F)
   ))
 }
 

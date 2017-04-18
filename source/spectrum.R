@@ -1,7 +1,7 @@
 library(ggplot2)
 
 if (!exists("Transform3", mode = "function")) {
-  source("transform.R")
+  source("source/transform.R")
 }
 
 # Constants
@@ -94,8 +94,7 @@ PlotBaseSpectrum <- function(mut.ctx, plotter, grf.name = "", ...) {
 # I.e. the motif matrix contains more than one column
 .PlotBaseSpectrumForSet <- function(mut.ctx, plbotter, grf.name = "",
                                     order = NA) {
-  if (!is.object(plotter) || 
-      tail(class(plotter), n = 1) != "StackedBarPlotter") {
+  if (!is.object(plotter) || class(plotter)[3] != "StackedBarPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   

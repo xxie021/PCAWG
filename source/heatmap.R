@@ -1,7 +1,7 @@
 library(ggplot2)
 
 if (!exists("Transform3", mode = "function")) {
-  source("transform.R")
+  source("source/transform.R")
 }
 
 # Public function to plot heatmap for 96 mutation types.
@@ -9,7 +9,7 @@ if (!exists("Transform3", mode = "function")) {
 # the same constraints of that one. Currenly it accepts only one type of
 # "plotter", namely, "HeatmapPlotter"
 PlotHeatmap <- function(mut.ctx, plotter, grf.name = "") {
-  if (!is.object(plotter) || tail(class(plotter), n = 1) != "HeatmapPlotter") {
+  if (!is.object(plotter) || class(plotter)[3] != "HeatmapPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   

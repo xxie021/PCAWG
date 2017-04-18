@@ -57,7 +57,7 @@ XPlotter <- function(file.out, theme.extra = NA) {
     stop("Invalid data type of 'file.out'", call. = F)
   }
   
-  if (!(tail(class(file.out), n = 1) %in% kSupportedOutputFormats)) {
+  if (!(class(file.out)[3] %in% kSupportedOutputFormats)) {
     stop("Unrecognised output format", call. = F)
   }
   

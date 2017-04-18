@@ -64,7 +64,7 @@ JpgFileOut <- function(out.name, out.path = "") {
 }
 
 GenFullFileName <- function(file.out) {
-  UseMethod("GenFileFullName", file.out)
+  UseMethod("GenFullFileName", file.out)
 }
 
 GenFullFileName.XFileOut <- function(file.out) {

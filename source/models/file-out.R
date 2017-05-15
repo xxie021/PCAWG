@@ -17,7 +17,13 @@ XFileOut <- function(format, out.name, out.path = "") {
   out.path <- trimws(out.path)
   if (out.path != "") {
     if (!dir.exists(out.path)) {
-      dir.create(out.path)
+      tryCatch({
+        dir.create(out.path, recursive = T)
+      }, warning = function(w) {
+        stop("Invalid 'out.path'", call. = F)
+      }, error = function(e) {
+        stop("Invalid 'out.path'", call. = F)
+      })
     }
     
     if (!endsWith(out.path, "/") && !endsWith(out.path, "\\")) {
@@ -30,6 +36,8 @@ XFileOut <- function(format, out.name, out.path = "") {
     name = trimws(out.name),
     path = out.path
   )
+  
+  me$fullname <- paste0(me$path, me$name, ".", me$suffix)
     
   class(me) <- append(class(me), "XFileOut")
   return(me)
@@ -61,12 +69,4 @@ JpgFileOut <- function(out.name, out.path = "") {
   
   class(me) <- append(class(me), "JpgFileOut")
   return(me)
-}
-
-GenFullFileName <- function(file.out) {
-  UseMethod("GenFullFileName", file.out)
-}
-
-GenFullFileName.XFileOut <- function(file.out) {
-  return(paste0(file.out$path, file.out$name, ".", file.out$suffix))
 }

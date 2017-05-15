@@ -1,11 +1,50 @@
+source("source/transform.R")
 source("source/plot-interface.R")
 
 # Constants
 kMutBaseColour <- c("deepskyblue", "black", "tomato",
                     "gray", "yellowgreen", "pink")
 
+PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
+  if (!is.object(plotter) || class(plotter)[3] != "HeatmapPlotter") {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  cat("Info: Preparing heatmap data ...\n")
+  data <- Transform3(mut.ctx, "base.ctx.heatmap.plot")
+  geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
+                      trimws(geno.type),
+                      strsplit(plotter$file.out$name, "\\.")[[1]][1])
+  cat("Info: Heatmap data ready\n")
+  
+  cat("Info: Start plotting heatmap ...\n")
+  plot <- ggplot(data, aes(x = nxt_base, y = fwd_base, fill = value)) +
+    facet_grid(sample_name ~ mut_base, labeller = label_context) +
+    geom_tile() +
+    scale_y_discrete(limits = rev(kNtBase)) +
+    scale_fill_gradient2(name = "Percentage (log10)", limits= c(-2, 2),
+                         low = "white", mid = "gold", high = "red",
+                         midpoint = 0,
+                         guide = guide_colourbar(title.position = "top",
+                                                 barwidth = 12)) +
+    coord_equal() +
+    labs(title = paste("Mutation Heatmap for", geno.type),
+         x = "Three Prime Base", y = "Five Prime Base") + 
+    plotter$theme
+  
+  ggsave(plotter$file.out$fullname, plot = plot,
+         width = 7, height = max(7, 2.6 + 0.85 * ncol(mut.ctx)),
+         units = "in", limitsize = F)
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
 PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
                                  log10 = TRUE) {
+  if (!is.object(plotter) || class(plotter)[3] != "BoxCountPlotter") {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
   data <- reshape2::melt(mut.ctx, varnames = c("type", "id"))
   data$id <- as.factor(data$id)
   if (log10) {

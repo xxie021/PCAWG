@@ -191,7 +191,7 @@ Save2RData(sigs, data.sig.fo,
            obj.name = paste0(stringr::str_replace_all(tolower(geno.type),
                                                       "-", "."), ".sigs"))
 
-count.plotter <- CountPlotter(plot.count.fo)
+count.plotter <- BoxCountPlotter(plot.count.fo)
 sig.plotter <- SignaturePlotter(plot.sig.fo)
 contri.plotter <- ContributionPlotter(plot.contri.fo)
 cos.plotter <- CosinePlotter(plot.cos.fo)

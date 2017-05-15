@@ -1,6 +1,10 @@
 Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
 suppressPackageStartupMessages(library(SomaticSignatures))
 
+PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = "") {
+  UseMethod("PlotSsm96Heatmap", mut.ctx)
+}
+
 PlotSsmCounts <- function(mut.ctx, plotter, geno.type = "", log10 = TRUE) {
   UseMethod("PlotSsmCounts", mut.ctx)
 }

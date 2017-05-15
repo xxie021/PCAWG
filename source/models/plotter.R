@@ -38,10 +38,6 @@ kHeatmapTheme.default <- theme(
   axis.title.x = element_text(margin = margin(t = 12)),
   axis.title.y = element_text(margin = margin(r = 12)),
   axis.text = element_text(face = "bold", colour = "black", size = 8),
-  legend.background = element_rect(colour = "gray"),
-  legend.margin = margin(5, 25, 5, 25),
-  legend.title = element_text(face = "bold", size = 10.5),
-  legend.title.align = 0.5,
   legend.position = "bottom",
   panel.spacing = unit(0, "pt"),
   strip.background = element_rect(fill = "black", colour = "goldenrod",
@@ -49,7 +45,7 @@ kHeatmapTheme.default <- theme(
   strip.text = element_text(face = "bold", colour = "white", size = 9)
 )
 
-kCountTheme.default <- theme(
+kBoxCountTheme.default <- theme(
   axis.title = element_text(face = "bold", colour = "black", size = 12),
   axis.title.x = element_text(margin = margin(t = 12)),
   axis.text = element_text(face = "bold", colour = "black"),
@@ -166,7 +162,8 @@ StackedBarPlotter <- function(file.out, use.default.theme = TRUE,
 HeatmapPlotter <- function(file.out, use.default.theme = TRUE,
                            theme.extra = NULL) {
   if (use.default.theme) {
-    me <- XPlotter(file.out, theme.extra = kHeatmapTheme.default)
+    me <- XPlotter(file.out,
+                   theme.extra = kHeatmapTheme.default + kLegendTheme.default)
   } else {
     me <- XPlotter(file.out, theme.extra = theme.extra)
   }
@@ -175,16 +172,16 @@ HeatmapPlotter <- function(file.out, use.default.theme = TRUE,
   return(me)
 }
 
-CountPlotter <- function(file.out, use.default.theme = TRUE,
+BoxCountPlotter <- function(file.out, use.default.theme = TRUE,
                          theme.extra = NULL) {
   if (use.default.theme) {
     me <- XPlotter(file.out,
-                   theme.extra = kCountTheme.default + kLegendTheme.hidden)
+                   theme.extra = kBoxCountTheme.default + kLegendTheme.hidden)
   } else {
     me <- XPlotter(file.out, theme.extra = theme.extra)
   }
   
-  class(me) <- append(class(me), "CountPlotter")
+  class(me) <- append(class(me), "BoxCountPlotter")
   return(me)
 }
 

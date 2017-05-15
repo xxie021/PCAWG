@@ -145,21 +145,20 @@ source("source/ssm-core.R")
 source("source/plot-core.R")
 source("source/utils.R")
 
-#mut.ctx <- mut.ctx[, colSums(mut.ctx) < 2000000]
 cat("Info: Removing minor mutation types ...\n")
-mut.ctx <- RemoveMinorMutationTypes(mut.ctx, threshold = 0.01,
-                                    normalise = opt$normalise)
+mut.ctx.reduced <- RemoveMinorMutationTypes(mut.ctx, threshold = 0.01,
+                                            normalise = opt$normalise)
 
-if (opt$n_signatures > min(nrow(mut.ctx), ncol(mut.ctx)) - 1) {
+if (opt$n_signatures > min(nrow(mut.ctx.reduced), ncol(mut.ctx.reduced)) - 1) {
   stop("Too large N_SIGNATURES specified", call. = F)
 }
 
 cat("Info: Bootstrapping ...\n")
-mut.ctx.boot <- McBootstrap(mut.ctx)
+mut.ctx.boot <- McBootstrap(mut.ctx.reduced)
 
 if (opt$normalise) {
   cat("Info: Normalising data ...\n")
-  mut.ctx.boot <- sweep(mut.ctx.boot, 2, colSums(mut.ctx), `/`)
+  mut.ctx.boot <- sweep(mut.ctx.boot, 2, colSums(mut.ctx.boot), `/`)
 }
 
 if (opt$n_signatures < 2) {

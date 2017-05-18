@@ -8,11 +8,15 @@ options <- list(
               help = "Specify a motif matrix to process"),
   make_option(c("-d", "--parent_dir"),
               type = "character",
-              help = "Specify a parent directory to store heatmap results"),
+              help = "Specify a directory to store spectrum results"),
+  make_option(c("-s", "--sort_by"),
+              type = "character",
+              help = paste("Specify one of the six base substitutions to",
+                           "order result")),
   make_option(c("--jpg"),
               action = "store_true",
               default = FALSE,
-              help = "Indicate if storing heatmap plots in JPG format")
+              help = "Indicate if storing spectrum plots in JPG format")
 )
 
 opt <- tryCatch({
@@ -42,14 +46,14 @@ if (is.null(opt$parent_dir)) {
 }
 
 cat("Info: Preparing output directory ...\n")
-data.heatmap.fo <- TsvFileOut(paste0(geno.type, ".ssm96.heatmap"),
-                              out.path = paste0(opt$parent_dir, "data"))
+data.spectrum.fo <- TsvFileOut(paste0(geno.type, ".ssm6.spectrum"),
+                               out.path = paste0(opt$parent_dir, "data"))
 if (opt$jpg) {
-  plot.heatmap.fo <- JpgFileOut(paste0(geno.type, ".ssm96.heatmap"),
-                                out.path = paste0(opt$parent_dir, "plots"))
+  plot.stackedbar.fo <- JpgFileOut(paste0(geno.type, ".ssm6.spectrum"),
+                                   out.path = paste0(opt$parent_dir, "plots"))
 } else {
-  plot.heatmap.fo <- PdfFileOut(paste0(geno.type, ".ssm96.heatmap"),
-                                out.path = paste0(opt$parent_dir, "plots"))
+  plot.stackedbar.fo <- PdfFileOut(paste0(geno.type, ".ssm6.spectrum"),
+                                   out.path = paste0(opt$parent_dir, "plots"))
 }
 
 cat("Info: Loading data \"", basename(opt$motif_matrix), "\" ...\n", sep = "")
@@ -73,6 +77,7 @@ source("source/summary.R")
 if (geno.type == "wg") {
   geno.type = "Whole Genomes"
 }
-heatmap.plotter <- HeatmapPlotter(plot.heatmap.fo)
-PlotSsm96Heatmap(mut.ctx, heatmap.plotter, geno.type = geno.type)
-Summary(mut.ctx, "base.ctx.heatmap.real", file.out = data.heatmap.fo)
+stackedbar.plotter <- StackedBarPlotter(plot.stackedbar.fo)
+PlotSsm6Spectrum(mut.ctx, stackedbar.plotter, geno.type = geno.type,
+                 order = opt$sort_by)
+Summary(mut.ctx, "base.summary", file.out = data.spectrum.fo)

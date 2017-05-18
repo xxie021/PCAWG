@@ -1,8 +1,7 @@
 Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
-library(SomaticSignatures)
+suppressPackageStartupMessages(library(SomaticSignatures))
 
 # S3 classes store variant info of a sample
-# Two inherited classes: "SsmSample" and "SimSample"
 VariantSample <- function(vcf, ref, id = "", name = "") {
   if (class(vcf) != "CollapsedVCF") {
     stop("Invalid VCF data found", call. = F)
@@ -19,12 +18,12 @@ VariantSample <- function(vcf, ref, id = "", name = "") {
   #})
   
   if (!is.character(id)) {
-    warning("'id' is not type of character. Converted", call. = F)
+    cat("Warn: 'id' is not type of character. Converted\n")
     id <- as.character(id)
   }
   
   if (!is.character(name)) {
-    warning("'name' is not type of character. Converted", call. = F)
+    cat("Warn: 'name' is not type of character. Converted\n")
     name <- as.character(name)
   }
   
@@ -65,22 +64,22 @@ SsmSample <- function(vcf, ref, id = "", name = "") {
 }
 
 # Somatic indel mutation
-SimSample <- function(vcf, ref, id = "", name = "") {
-  class.name <- "SimSample"
-  
-  cat("Info: Constructing class \"", class.name, "\" ...\n", sep = "")
-  me <- VariantSample(vcf, ref, id, name)
-  idx.ins <- which(isInsertion(me$vcf))
-  idx.del <- which(isDeletion(me$vcf))
-  
-  me$idx.ins <- idx.ins
-  me$idx.del <- idx.del
-  
-  class(me) <- append(class(me), class.name)
-  cat("Info: Class \"", class.name, "\" constructed\n", sep = "")
-  
-  return(me)
-}
+# SimSample <- function(vcf, ref, id = "", name = "") {
+#   class.name <- "SimSample"
+#   
+#   cat("Info: Constructing class \"", class.name, "\" ...\n", sep = "")
+#   me <- VariantSample(vcf, ref, id, name)
+#   idx.ins <- which(isInsertion(me$vcf))
+#   idx.del <- which(isDeletion(me$vcf))
+#   
+#   me$idx.ins <- idx.ins
+#   me$idx.del <- idx.del
+#   
+#   class(me) <- append(class(me), class.name)
+#   cat("Info: Class \"", class.name, "\" constructed\n", sep = "")
+#   
+#   return(me)
+# }
 
 GenSampleName <- function(sample, full = FALSE) {
   UseMethod("GenSampleName", sample)

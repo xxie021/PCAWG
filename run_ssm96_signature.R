@@ -1,8 +1,6 @@
 suppressPackageStartupMessages(library(optparse))
 
-# Load models
 source("source/models/file-out.R")
-source("source/models/plotter.R")
 
 options <- list(
   make_option(c("-m", "--motif_matrix"),
@@ -15,28 +13,31 @@ options <- list(
   make_option(c("-i", "--iteration"),
               type = "integer",
               default = 500,
-              help = paste0("Specify a positive number of iterations",
-                            "  to run NMF [default %default]")),
+              help = paste("Specify a positive number of iterations",
+                           "to run NMF [default %default]")),
   make_option(c("-k", "--n_signatures"),
               type = "integer",
               default = 0,
-              help = paste0("Specify a nonnegative number of signatures",
-                            " [default %default]")),
+              help = paste("Specify a nonnegative number of signatures",
+                           "[default %default]")),
+  make_option(c("-s", "--sort_contribution_by"),
+              type = "character",
+              help = "Specify a signature for contribution sorting"),
   make_option(c("-d", "--parent_dir"),
               type = "character",
-              help = "Specify a parent directory to store results"),
+              help = "Specify a parent directory to store signature results"),
   make_option(c("--cosine_low"),
               type = "double",
               default = 0.55,
-              help = paste0("Specify a threshold (0 < l < 1) of cosine",
-                            " similarity to indicate two signatures", 
-                            " are different [default %default]")),
+              help = paste("Specify a threshold (0 < l < 1) of cosine",
+                           "similarity to indicate two signatures", 
+                           "are different [default %default]")),
   make_option(c("--cosine_high"),
               type = "double",
               default = 0.85,
-              help = paste0("Specify a threshold (0 < h < 1) of cosine",
-                            " similarity to indicate two signatures", 
-                            " are redundant [default %default]")),
+              help = paste("Specify a threshold (0 < h < 1) of cosine",
+                           "similarity to indicate two signatures are", 
+                           "redundant [default %default]")),
   make_option(c("--jpg"),
               action = "store_true",
               default = FALSE,
@@ -45,8 +46,8 @@ options <- list(
   make_option(c("--log10_count"),
               action = "store_true",
               default = FALSE,
-              help = paste0("Indicate if plotting mutation type counts",
-                            " using Log 10 scale"))
+              help = paste("Indicate if plotting mutation type counts",
+                           "using Log 10 scale"))
 )
 
 opt <- tryCatch({
@@ -141,6 +142,7 @@ if (ncol(mut.ctx) < 10) {
 }
 
 cat("Info: Loading libraries and scripts ...\n")
+source("source/models/plotter.R")
 source("source/ssm-core.R")
 source("source/plot-core.R")
 source("source/utils.R")
@@ -191,17 +193,21 @@ Save2RData(sigs, data.sig.fo,
            obj.name = paste0(stringr::str_replace_all(tolower(geno.type),
                                                       "-", "."), ".sigs"))
 
-count.plotter <- BoxCountPlotter(plot.count.fo)
-sig.plotter <- SignaturePlotter(plot.sig.fo)
-contri.plotter <- ContributionPlotter(plot.contri.fo)
-cos.plotter <- CosinePlotter(plot.cos.fo)
-
 if (geno.type == "wg") {
   geno.type = "Whole Genomes"
 }
+
+count.plotter <- BoxCountPlotter(plot.count.fo)
 PlotSsmCounts(mut.ctx, count.plotter, geno.type = geno.type, opt$log10_count)
+
+sig.plotter <- SignaturePlotter(plot.sig.fo)
 PlotSsmSignatures(sigs, sig.plotter, geno.type = geno.type)
-PlotSsmSigContribution(sigs, contri.plotter, geno.type = geno.type)
+
+contri.plotter <- ContributionPlotter(plot.contri.fo)
+PlotSsmSigContribution(sigs, contri.plotter, geno.type = geno.type,
+                       order = opt$sort_contribution_by)
+
+cos.plotter <- CosinePlotter(plot.cos.fo)
 PlotCosineSimilarity(sigs, cos.plotter, geno.type = geno.type)
 
 if (opt$n_signatures < 2 && max.k > 2) {

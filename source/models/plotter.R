@@ -27,10 +27,7 @@ kStackedBarTheme.default <- theme(
   axis.title.y = element_blank(),
   axis.text = element_text(face = "bold", colour = "black"),
   axis.text.x = element_text(hjust = 1, vjust = 0.5, angle = 90),
-  axis.text.y = element_text(size = 11),
-  legend.background = element_rect(colour = "gray"),
-  legend.title = element_text(face = "bold", size = 10.5),
-  legend.title.align = 0.5
+  axis.text.y = element_text(size = 11)
 )
 
 kHeatmapTheme.default <- theme(
@@ -96,9 +93,6 @@ kLegendTheme.hidden <- theme(
 )
 
 # S3 classes carry details of output files and themes to be used by ggplot2
-# Four inherited classes: "BarCountPlotter", "BarPercentagePlotter",
-# "StackedBarPlotter" and "HeatmapPlotter". Currenly it accepts two types of
-# "file.out": "PdfFileOut" and/or "JpgFileOut"
 XPlotter <- function(file.out, theme.extra = NULL) {
   if (!is.object(file.out)) {
     stop("Invalid data type of 'file.out'", call. = F)
@@ -150,7 +144,8 @@ BarPercentagePlotter <- function(file.out, use.default.theme = TRUE,
 StackedBarPlotter <- function(file.out, use.default.theme = TRUE,
                               theme.extra = NULL) {
   if (use.default.theme) {
-    me <- XPlotter(file.out, theme.extra = kStackedBarTheme.default)
+    me <- XPlotter(file.out, theme.extra = kStackedBarTheme.default +
+                     kLegendTheme.default)
   } else {
     me <- XPlotter(file.out, theme.extra = theme.extra)
   }

@@ -1,12 +1,88 @@
-source("source/transform.R")
 source("source/plot-interface.R")
 
 # Constants
 kMutBaseColour <- c("deepskyblue", "black", "tomato",
                     "gray", "yellowgreen", "pink")
 
+PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = "",
+                                  percentage = FALSE) {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  cat("Info: Preparing basic data ...\n")
+  if (is.null(id) || !(id %in% colnames(mut.ctx))) {
+    stop("Sample/Genome is not found", call. = F)
+  } else {
+    id <- as.character(id)
+  }
+  data <- Transform3(as.matrix(mut.ctx[, id]), "base.summary")
+  geno.name <- ifelse(is.character(geno.name) && trimws(geno.name) != "",
+                      trimws(geno.name), id)
+  
+  if (percentage) {
+    data <- as.data.frame(data[, "percentage"])
+    cat("Info: Basic data ready\n")
+    
+    cat("Info: Start plotting basic data for sample (in Percentage) ...\n")
+    plot <- ggplot(data, aes(x = kMutBase, y = data)) +
+      geom_bar(stat = "identity", fill = kMutBaseColour, width = 0.4) +
+      scale_y_continuous(breaks = seq(0, max(data), by = 0.05),
+                         labels = scales::percent) +
+      ggtitle(paste("Percentage of Base Substitutions for", geno.name)) +
+      plotter$theme
+  } else {
+    data <- as.data.frame(data[, "count"])
+    cat("Info: Basic data ready\n")
+    
+    cat("Info: Start plotting basic data for sample (in Count) ...\n")
+    plot <- ggplot(data, aes(x = kMutBase, y = data)) +
+      geom_bar(stat = "identity", fill = rev(kMutBaseColour), width = 0.4) +
+      scale_x_discrete(limits = rev(kMutBase)) +
+      scale_y_continuous(labels = scales::comma) +
+      coord_flip() +
+      labs(title = paste("Number of Base Substitutions for", geno.name),
+           y = "Number of Mutations") +
+      plotter$theme
+  }
+  
+  ggsave(plotter$file.out$fullname, plot = plot,
+         width = 7, height = 7, units = "in")
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
+PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = "",
+                                    order = NULL) {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  cat("Info: Preparing spectrum data ...\n")
+  data <- Transform3(mut.ctx, "base.spectrum", order = order)
+  geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
+                      trimws(geno.type),
+                      strsplit(plotter$file.out$name, "\\.")[[1]][1])
+  cat("Info: Spectrum data ready\n")
+  
+  cat("Info: Start plotting spectrum for set ...\n")
+  plot <- ggplot(data, aes(x = sample_name, y = value, fill = mut_base)) +
+    geom_bar(stat = "identity", colour = "white", width = 1) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.2), labels = scales::percent) +
+    scale_fill_manual(name = "Mutation\nTypes\n", values = kMutBaseColour) +
+    labs(title = paste("Spectrum of Base Substitutions for", geno.type),
+         x = "Samples") +
+    plotter$theme
+  
+  ggsave(plotter$file.out$fullname, plot = plot,
+         width = max(7, 2.5 + 0.15 * ncol(mut.ctx)), height = 7,
+         units = "in", limitsize = F)
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
 PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[3] != "HeatmapPlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -41,7 +117,7 @@ PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
 
 PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
                                  log10 = TRUE) {
-  if (!is.object(plotter) || class(plotter)[3] != "BoxCountPlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -79,7 +155,7 @@ PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
 
 PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
                                                    geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[3] != "SignaturePlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -105,7 +181,7 @@ PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
 PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
                                                         geno.type = "",
                                                         order = NULL) {
-  if (!is.object(plotter) || class(plotter)[3] != "ContributionPlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -115,6 +191,8 @@ PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
     row.order <- order(contribution[, which(colnames(contribution) == order)],
                        decreasing = T)
     contribution <- contribution[row.order, ]
+  } else if (!is.null(order)) {
+    cat("Warn: Contribution sorting factor does not exist. Ignored\n")
   }
   data <- reshape2::melt(contribution, varnames = c("sample", "signature"))
   data$sample = factor(data$sample, levels = unique(data$sample))
@@ -149,7 +227,7 @@ PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
 
 PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
                                                       geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[3] != "CosinePlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -180,7 +258,7 @@ PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
 }
 
 PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[3] != "MeasurePlotter") {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   

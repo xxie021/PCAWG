@@ -1,9 +1,7 @@
-library(reshape2)
-
 ################################################################################
 # NOTE:
 # All functions in this script file support context motifs with length = 3 only
-# I.e. base subsitution with one forward nucleotide and another one after
+# I.e. base subsitutions with their immidate flanking 5' and 3' bases
 # DON'T use them for context motifs with other lengths
 ################################################################################
 
@@ -12,19 +10,24 @@ kNtBase <- c("A", "C", "G", "T")
 kMutBase <- c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
 kNumOfMutCtx3 <- 96
 
-# Public function to transform motif matrix to requested format.
-# The ending "3" in the function name indicates the support of 
-# context motifs with length = 3 only
-# The "type" parameter accepts
-#   (1) base.summary
-#   (2) base.spectrum
-#   (3) base.ctx.summary
-#   (4) base.ctx.heatmap.plot
-#   (5) base.ctx.heatmap.real
-# Optional parameters:
-#   (1) percentage = TRUE/FALSE
-#   (2) order (one of "kMutBase")
-#   (3) data.type = <any>/pct/log
+# Transforms a motif matrix to the requested format. The ending "3" in the
+# function name indicates the support of context motifs with length = 3 only
+# @param      mut.ctx     a motif matrix (3-mer context, 96 rows)
+# @param      type        one of the five types related to internal functions:
+#                         (1) base.summary
+#                         (2) base.spectrum
+#                         (3) base.ctx.summary
+#                         (4) base.ctx.heatmap.plot
+#                         (5) base.ctx.heatmap.real
+# @param(opt) normalise   the flag indicating if data need to be normalised;
+#                         used with the type "base.summary" only
+# @param(opt) order       one of the base substitution in {@code kMutBase} to
+#                         order the result; used with the type "base.spectrum"
+#                         only
+# @param(opt) data.type   either "frac" or "log" indicating if data need to be
+#                         converted into fraction or Log 10 scale; used with
+#                         the type "base.ctx.heatmap.real" only
+# @return                 the requested format of the motif matrix
 Transform3 <- function(mut.ctx, type, ...) {
   if (nrow(mut.ctx) != kNumOfMutCtx3) {
     stop("Invalid motif matrix. Must have 96 rows", call. = F)
@@ -39,8 +42,8 @@ Transform3 <- function(mut.ctx, type, ...) {
   
   return(switch(type,
                 base.summary = {
-                  if ("percentage" %in% names(args)) {
-                    .BaseTransform2summary(mut.ctx, args$percentage)
+                  if ("normalise" %in% names(args)) {
+                    .BaseTransform2summary(mut.ctx, args$normalise)
                   } else {
                     .BaseTransform2summary(mut.ctx)
                   }
@@ -70,8 +73,9 @@ Transform3 <- function(mut.ctx, type, ...) {
 # Private functions
 ###################
 
-# Transform a motif matrix to show info of 6 base mutation types of each genome
-.BaseTransform2summary <- function(mut.ctx, percentage = FALSE) {
+# Transforms a motif matrix to show info of 6 base mutation types
+# of each genome.
+.BaseTransform2summary <- function(mut.ctx, normalise = FALSE) {
   data <- cbind(colSums(as.matrix(mut.ctx[1:16, ])),
                 colSums(as.matrix(mut.ctx[17:32, ])),
                 colSums(as.matrix(mut.ctx[33:48, ])),
@@ -80,11 +84,11 @@ Transform3 <- function(mut.ctx, type, ...) {
                 colSums(as.matrix(mut.ctx[81:96, ])))
   colnames(data) <- kMutBase
   
-  if (nrow(data) == 1 && !percentage) {
+  if (nrow(data) == 1 && !normalise) {
     data <- t(rbind(data, data / sum(data)))
     colnames(data) <- c("count", "percentage")
-  } else if (percentage) {
-    data <- sweep(data, 1, rowSums(data), `/`)
+  } else if (normalise) {
+    data <- data / rowSums(data)
     if (nrow(data) == 1) {
       row.names(data) <- colnames(mut.ctx)
     }
@@ -93,12 +97,16 @@ Transform3 <- function(mut.ctx, type, ...) {
   return(data)
 }
 
-# Transform a motif matrix for stacked bar plot on 6 base mutation types
-# using ggplot2
-.BaseTransform2spectrum <- function(mut.ctx, order = NA) {
-  data <- t(.BaseTransform2summary(mut.ctx, percentage = T))
-  if (ncol(data) > 1 && is.character(order) && order %in% kMutBase) {
-    data <- data[, order(data[order, ])]
+# Transforms a motif matrix for stacked bar plot on 6 base mutation types
+# using ggplot2.
+.BaseTransform2spectrum <- function(mut.ctx, order = NULL) {
+  data <- t(.BaseTransform2summary(mut.ctx, normalise = T))
+  if (ncol(data) > 1) {
+    if (is.character(order) && order %in% kMutBase) {
+      data <- data[, order(data[order, ], decreasing = T)]
+    } else if (!is.null(order)) {
+      cat("Warn: Sorting factor does not exist. Ignored\n")
+    }
   }
   
   sample.names <- colnames(data)
@@ -112,7 +120,7 @@ Transform3 <- function(mut.ctx, type, ...) {
   return(data)
 }
 
-# Transform a motif matrix to show counts of 96 mutation types of each genome
+# Transforms a motif matrix to show counts of 96 mutation types of each genome.
 .BaseContextTransform2summary <- function(mut.ctx) {
   data <- t(mut.ctx)
   data <- cbind(data, rowSums(data[, 1:16]), rowSums(data[, 17:32]),
@@ -126,7 +134,7 @@ Transform3 <- function(mut.ctx, type, ...) {
   return(data)
 }
 
-# Transform a motif matrix for heatmap plot on 96 mutation types using ggplot2
+# Transforms a motif matrix for heatmap plot on 96 mutation types using ggplot2.
 .BaseContextTransform2heatmapPlot <- function(mut.ctx, log10 = TRUE) {
   data <- sweep(mut.ctx, 2, colSums(mut.ctx), `/`)
   if (log10) {
@@ -137,10 +145,10 @@ Transform3 <- function(mut.ctx, type, ...) {
   return(data)
 }
 
-# Transform a motif matrix to match heatmap representation
-.BaseContextTransform2heatmapReal <- function(mut.ctx, data.type = "pct") {
+# Transforms a motif matrix to match heatmap representation.
+.BaseContextTransform2heatmapReal <- function(mut.ctx, data.type = "frac") {
   data <- mut.ctx
-  if (data.type %in% c("pct", "log")) {
+  if (data.type %in% c("frac", "log")) {
     data <- sweep(data, 2, colSums(data), `/`)
   }
   if (data.type == "log") {
@@ -148,14 +156,14 @@ Transform3 <- function(mut.ctx, type, ...) {
   }
   
   data <- .BaseContextTransform2longformat(data)
-  data <- dcast(data, sample_name + fwd_base ~ mut_base + nxt_base,
-                value.var = "value")
+  data <- reshape2::dcast(data, sample_name + fwd_base ~ mut_base + nxt_base,
+                          value.var = "value")
   row.names(data) <- paste(data$sample_name, "|", data$fwd_base)
   data <- data[, c(-2, -1)]
   return(data)
 }
 
-# Transform a motif matrix to long-format data for 96 mutation types
+# Transforms a motif matrix to long-format data for 96 mutation types.
 .BaseContextTransform2longformat <- function(mut.ctx) {
   sample.names <- colnames(mut.ctx)
   n.samples <- length(sample.names)

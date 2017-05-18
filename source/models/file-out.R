@@ -1,6 +1,4 @@
 # S3 classes carry details of output files
-# Four inherited classes: "RDataFileOut", "TsvFileOut", "PdfFileOut" and
-# "JpgFileOut"
 XFileOut <- function(format, out.name, out.path = "") {
   if (!is.character(format) || trimws(format) == "") {
     stop("Invalid 'out.format'", call. = F)

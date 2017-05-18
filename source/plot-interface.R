@@ -1,6 +1,17 @@
 Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
 suppressPackageStartupMessages(library(SomaticSignatures))
 
+source("source/transform.R")
+
+PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = "",
+                           percentage = FALSE) {
+  UseMethod("PlotSsm6Basics", mut.ctx)
+}
+
+PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = "", order = NULL) {
+  UseMethod("PlotSsm6Spectrum", mut.ctx)
+}
+
 PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = "") {
   UseMethod("PlotSsm96Heatmap", mut.ctx)
 }

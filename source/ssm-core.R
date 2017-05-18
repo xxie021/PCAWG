@@ -144,18 +144,17 @@ ConstSignatures.NMF.rank <- function(nmf, mut.ctx,
       if (all(cosine < cosine.high, na.rm = T)) {
         cat("Info: Estimated number of signatures: ", k, "\n", sep = "")
         if (any(cosine >= cosine.low, na.rm = T)) {
-          warning(paste0("When k = ", k, ", the cosine similarities of",
-                         " some construsted signatures fall into the",
-                         " predefined ambiguous range. Visual inspection on",
-                         " 'k's from this value to ", min(sel.range),
-                         " may be required"), call. = F)
+          cat("Warn: When k = ", k, ", the cosine similarities of some",
+              " construsted signatures fall into the predefined ambiguous",
+              " range. Visual inspection on 'k's from this value to ",
+              min(sel.range), " may be required\n", sep = "")
         }
         break
       } else if (k == min(sel.range)) {
-        cat("Info: Estimated number of signatures: ", k, "\n", sep = "")
-        warning(paste0("All 'k's in the range have been tested but some of",
-                       " them are still highly similar. Visual inspection",
-                       " may be required"), call. = F)
+        cat("Info: Estimated number of signatures: ", k, "\n",
+            "Warn: All 'k's in the range have been tested but some of them",
+            " are still highly similar. Visual inspection may be required\n",
+            sep = "")
       }
     }
   }

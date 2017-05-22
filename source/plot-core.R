@@ -6,10 +6,6 @@ kMutBaseColour <- c("deepskyblue", "black", "tomato",
 
 PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = "",
                                   percentage = FALSE) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   cat("Info: Preparing basic data ...\n")
   if (is.null(id) || !(id %in% colnames(mut.ctx))) {
     stop("Sample/Genome is not found", call. = F)
@@ -54,10 +50,6 @@ PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = "",
 
 PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = "",
                                     order = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   cat("Info: Preparing spectrum data ...\n")
   data <- Transform3(mut.ctx, "base.spectrum", order = order)
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
@@ -82,10 +74,6 @@ PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = "",
 }
 
 PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   cat("Info: Preparing heatmap data ...\n")
   data <- Transform3(mut.ctx, "base.ctx.heatmap.plot")
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
@@ -117,10 +105,6 @@ PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
 
 PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
                                  log10 = TRUE) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   data <- reshape2::melt(mut.ctx, varnames = c("type", "id"))
   data$id <- as.factor(data$id)
   if (log10) {
@@ -155,10 +139,6 @@ PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
 
 PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
                                                    geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
                       trimws(geno.type),
                       strsplit(plotter$file.out$name, "\\.")[[1]][1])
@@ -181,10 +161,6 @@ PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
 PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
                                                         geno.type = "",
                                                         order = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   contribution <- samples(ssm.sigs)
   contribution <- contribution / rowSums(contribution)
   if (is.character(order) && order %in% colnames(contribution)) {
@@ -227,11 +203,13 @@ PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
 
 PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
                                                       geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
-  cosine <- lsa::cosine(signatures(ssm.sigs))
+  PlotCosineSimilarity(signatures(ssm.sigs), plotter, geno.type)
+}
+
+PlotCosineSimilarity.matrix <- function(ssm.sigs, plotter, geno.type = "") {
+  cosine <- lsa::cosine(ssm.sigs)
+  cat("Info: Highest cosine value: ", max(cosine[which(cosine < 1)]), "\n",
+      sep = "")
   cosine[lower.tri(cosine)]<- NA
   data <- reshape2::melt(cosine, na.rm = T)
   label <- round(data$value, 2)
@@ -258,10 +236,6 @@ PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
 }
 
 PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = "") {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
-    stop("Invalid 'plotter'", call. = F)
-  }
-  
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
                       trimws(geno.type),
                       strsplit(plotter$file.out$name, "\\.")[[1]][1])

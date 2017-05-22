@@ -162,6 +162,33 @@ ConstSignatures.NMF.rank <- function(nmf, mut.ctx,
   return(sigs)
 }
 
+# Adds removed minor mutation types back to the signature matrix with zeros.
+# @param  mt.sigs     a signature matrix
+# @return             the signature matrix with all 96 mutation types
+AddSsm96MinorMutationTypes <- function(mt.sigs) {
+  mut.types <- c("CA", "CG", "CT", "TA", "TC", "TG")
+  nt.bases <- c("A", "C", "G", "T")
+  
+  all.sigs <- matrix(rep(0, 96 * ncol(mt.sigs)), ncol = ncol(mt.sigs))
+  colnames(all.sigs) <- colnames(mt.sigs)
+  row.names(all.sigs) <- sapply(mut.types, function(base) {
+    paste0(rep(base, times = 16), " ",
+           rep(nt.bases, each = 4), ".", rep(nt.bases, times = 4))
+  })
+  
+  if (!all(row.names(mt.sigs) %in% row.names(all.sigs))) {
+    stop("Unrecognised mutation types are detected in signatures", call. = F)
+  }
+  
+  if (nrow(mt.sigs) != 96) {
+    all.sigs[row.names(mt.sigs), ] <- mt.sigs
+  } else {
+    all.sigs <- mt.sigs
+  }
+  
+  return(all.sigs)
+}
+
 ###################
 # Private functions
 ###################

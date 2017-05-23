@@ -230,7 +230,9 @@ PlotCosineSimilarity.matrix <- function(ssm.sigs, plotter, geno.type = "") {
     plotter$theme
   
   ggsave(plotter$file.out$fullname, plot = plot,
-         width = 8, height = 7, units = "in")
+         width = max(8, 1.7 + 0.3 * ncol(ssm.sigs)),
+         height = max(7, 1 + 0.3 * ncol(ssm.sigs)),
+         units = "in", limitsize = F)
   cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
       sep = "")
 }

@@ -104,7 +104,7 @@ bin <- lapply(files.per.tumour, function(f) {
   if (length(ssm.set) == 1) {
     mut.ctx <- ssm.set[[1]]$mut.ctx
   } else {
-    mut.ctx <- MergeMotifMatrixFromSample(ssm.set)
+    mut.ctx <- MergeMotifMatrixFromSamples(ssm.set)
     mut.ctx <- mut.ctx[, order(as.integer(colnames(mut.ctx)))]
   }
   geno.type <- tolower(unique(f$histology_abbreviation))

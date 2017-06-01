@@ -1,5 +1,6 @@
 Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
 suppressPackageStartupMessages(library(SomaticSignatures))
+suppressPackageStartupMessages(library(dendextend))
 
 source("source/transform.R")
 
@@ -67,4 +68,17 @@ PlotMeasures <- function(nmf, plotter, geno.type = "") {
   }
   
   UseMethod("PlotMeasures", nmf)
+}
+
+PlotDendrogram <- function(fit, file.out, n.clust = NULL,
+                           group.frame = TRUE, topic = NULL) {
+  if (!is.object(file.out) || class(file.out)[2] != "XFileOut") {
+    stop("Invalid 'file.out'", call. = F)
+  }
+  
+  if (!(class(file.out)[3] %in% c("JpgFileOut", "PdfFileOut"))) {
+    stop("This type of 'file.out' is currently unsupported", call. = F)
+  }
+  
+  UseMethod("PlotDendrogram", fit)
 }

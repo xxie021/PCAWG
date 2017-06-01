@@ -252,3 +252,56 @@ PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = "") {
   cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
       sep = "")
 }
+
+PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
+                                  group.frame = TRUE, topic = NULL) {
+  d <- as.dendrogram(fit)
+  
+  if (is.null(n.clust)) {
+    cat("Info: Number of clusters NOT provided. Estimating ...\n")
+    n.clust <- find_k(d, krange = 2:(nleaves(d) - 1))$k
+    cat("Info: Estimated number of clusters: ", n.clust, "\n", sep = "")
+  } else if (!is.numeric(n.clust) || length(n.clust) > 1 || n.clust < 1) {
+    stop("Invalid 'n.clust'. Must be a single positive Integer", call. = F)
+  } else {
+    n.clust <- as.integer(n.clust)
+    cat("Info: Input number of clusters: ", n.clust, "\n", sep = "")
+  }
+  
+  h.cut <- heights_per_k.dendrogram(d)[as.character(n.clust)]
+  cat("Info: Cutting height: ", h.cut, "\n", sep = "")
+  
+  colours <- RColorBrewer::brewer.pal(8, "Dark2")
+  if (n.clust > 8) {
+    colours <- rep(colours, times = ceiling(n.clust / 8))[1:n.clust]
+  }
+  d <- color_labels(d, k = n.clust, col = colours)
+  labels_cex(d) <- 0.7
+  d <- rev(d)
+  
+  if (!is.null(topic) && trimws(topic) != "") {
+    title <- paste0("Cluster Dendrogram of ", topic, "\n(k = ", n.clust, ")")
+  } else {
+    title <- paste0("Cluster Dendrogram\n(k = ", n.clust, ")")
+  }
+  
+  cat("Info: Start plotting cluster dendrogram ...\n")
+  if (class(file.out)[3] == "JpgFileOut") {
+    jpeg(filename = file.out$fullname,
+         width = 8, height = max(6, 3.5 + 0.11 * nleaves(d)),
+         units = "in", res = 300)
+  } else {
+    pdf(file = file.out$fullname,
+        width = 8, height = max(6, 3.5 + 0.11 * nleaves(d)))
+  }
+  par(bg = "grey92", mar = c(3, 8, 4, 3))
+  plot_horiz.dendrogram(d, xlim = 1:0, cex.axis = 0.9)
+  title(main = title, line = -3, outer = T)
+  if (group.frame) {
+    rect.dendrogram(d, k = n.clust, border = "#487AA1", horiz = T,
+                    lower_rect = -0.3, lwd = 1.1)
+  }
+  abline(v = h.cut, col = "#F38630", lty = "dashed", lwd = 2)
+  dev.off()
+  cat("Info: Plot saved in \"", basename(file.out$fullname), "\"\n", sep = "")
+}

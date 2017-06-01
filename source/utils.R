@@ -39,13 +39,13 @@ MergeMotifMatrix <- function(mut.ctx.set, by.tumour = FALSE,
 # Merges multiple SSM motif matrices from the given variant sample set.
 # @param  sample.set  a list of the {@code SsmSample} objects
 # @return             the merged motif matrix
-MergeMotifMatrixFromSample <- function(sample.set) {
+MergeMotifMatrixFromSamples <- function(sample.set) {
   if (!is.list(sample.set) || length(sample.set) < 2) {
     stop("Invalid or too few VariantSample set", call. = F)
   }
   
   if (any(sapply(sample.set, function(spl) class(spl)[3] != "SsmSample"))) {
-    stop("Invalid VariantSample found in the set", call. = F)
+    stop("Invalid VariantSample is found in the set", call. = F)
   }
   
   return(MergeMotifMatrix(lapply(sample.set, function(sample) sample$mut.ctx)))

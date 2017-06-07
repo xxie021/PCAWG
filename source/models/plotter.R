@@ -71,7 +71,8 @@ kContributionTheme.default <- theme(
 
 kCosineTheme.default <- theme(
   axis.title = element_blank(),
-  axis.text = element_text(face = "bold", colour = "black", size = 11)
+  axis.text = element_text(face = "bold", colour = "black", size = 11),
+  axis.text.x = element_text(hjust = 1, vjust = 0.5, angle = 90)
 )
 
 kMeasureTheme.default <- theme(
@@ -80,6 +81,15 @@ kMeasureTheme.default <- theme(
   axis.text = element_text(face = "bold", colour = "black"),
   strip.background = element_rect(fill = "lavender"),
   strip.text = element_text(face = "bold", size = 9)
+)
+
+kLineGraphTheme.default <- theme(
+  axis.title.x = element_text(face = "bold", size = 12,
+                              margin = margin(t = 12)),
+  axis.title.y = element_blank(),
+  axis.text = element_text(face = "bold", colour = "black"),
+  axis.text.x = element_text(size = 8, hjust = 1, vjust = 0.5, angle = 90),
+  axis.text.y = element_text(size = 10)
 )
 
 kLegendTheme.default <- theme(
@@ -227,5 +237,18 @@ MeasurePlotter <- function(file.out, use.default.theme = TRUE,
   }
   
   class(me) <- append(class(me), "MeasurePlotter")
+  return(me)
+}
+
+LineGraphPlotter <- function(file.out, use.default.theme = TRUE,
+                             theme.extra = NULL) {
+  if (use.default.theme) {
+    me <- XPlotter(file.out,
+                   theme.extra = kLineGraphTheme.default + kLegendTheme.default)
+  } else {
+    me <- XPlotter(file.out, theme.extra = theme.extra)
+  }
+  
+  class(me) <- append(class(me), "LineGraphPlotter")
   return(me)
 }

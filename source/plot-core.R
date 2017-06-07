@@ -4,7 +4,7 @@ source("source/plot-interface.R")
 kMutBaseColour <- c("deepskyblue", "black", "tomato",
                     "gray", "yellowgreen", "pink")
 
-PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = "",
+PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = NULL,
                                   percentage = FALSE) {
   cat("Info: Preparing basic data ...\n")
   if (is.null(id) || !(id %in% colnames(mut.ctx))) {
@@ -48,7 +48,7 @@ PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = "",
       sep = "")
 }
 
-PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = "",
+PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = NULL,
                                     order = NULL) {
   cat("Info: Preparing spectrum data ...\n")
   data <- Transform3(mut.ctx, "base.spectrum", order = order)
@@ -73,7 +73,7 @@ PlotSsm6Spectrum.matrix <- function(mut.ctx, plotter, geno.type = "",
       sep = "")
 }
 
-PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
+PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = NULL) {
   cat("Info: Preparing heatmap data ...\n")
   data <- Transform3(mut.ctx, "base.ctx.heatmap.plot")
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
@@ -103,7 +103,7 @@ PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = "") {
       sep = "")
 }
 
-PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
+PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = NULL,
                                  log10 = TRUE) {
   data <- reshape2::melt(mut.ctx, varnames = c("type", "id"))
   data$id <- as.factor(data$id)
@@ -138,13 +138,15 @@ PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = "",
 }
 
 PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
-                                                   geno.type = "") {
+                                                   geno.type = NULL) {
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
                       trimws(geno.type),
                       strsplit(plotter$file.out$name, "\\.")[[1]][1])
   
   cat("Info: Start plotting signatures ...\n")
-  plot <- plotSignatures(ssm.sigs, normalize = T) + 
+  # Add the prefix "SomaticSignatures::" to distinguish from 
+  # the "deconstructSigs" package
+  plot <- SomaticSignatures::plotSignatures(ssm.sigs, normalize = T) + 
     scale_y_continuous(labels = scales::percent) +
     scale_fill_manual(values = kMutBaseColour) +
     labs(title = paste("NMF-based Signatures for", geno.type),
@@ -159,7 +161,7 @@ PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
 }
 
 PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
-                                                        geno.type = "",
+                                                        geno.type = NULL,
                                                         order = NULL) {
   contribution <- samples(ssm.sigs)
   contribution <- contribution / rowSums(contribution)
@@ -202,11 +204,11 @@ PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
 }
 
 PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
-                                                      geno.type = "") {
+                                                      geno.type = NULL) {
   PlotCosineSimilarity(signatures(ssm.sigs), plotter, geno.type)
 }
 
-PlotCosineSimilarity.matrix <- function(ssm.sigs, plotter, geno.type = "") {
+PlotCosineSimilarity.matrix <- function(ssm.sigs, plotter, geno.type = NULL) {
   cosine <- lsa::cosine(ssm.sigs)
   cat("Info: Highest cosine value: ", max(cosine[which(cosine < 1)]), "\n",
       sep = "")
@@ -230,14 +232,14 @@ PlotCosineSimilarity.matrix <- function(ssm.sigs, plotter, geno.type = "") {
     plotter$theme
   
   ggsave(plotter$file.out$fullname, plot = plot,
-         width = max(8, 1.7 + 0.3 * ncol(ssm.sigs)),
-         height = max(7, 1 + 0.3 * ncol(ssm.sigs)),
+         width = max(8, 2 + 0.4 * ncol(ssm.sigs)),
+         height = max(7, 1.3 + 0.4 * ncol(ssm.sigs)),
          units = "in", limitsize = F)
   cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
       sep = "")
 }
 
-PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = "") {
+PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = NULL) {
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
                       trimws(geno.type),
                       strsplit(plotter$file.out$name, "\\.")[[1]][1])
@@ -249,6 +251,48 @@ PlotMeasures.NMF.rank <- function(nmf, plotter, geno.type = "") {
     plotter$theme
   
   ggsave(plotter$file.out$fullname, plot = plot)
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
+PlotLineComparison.list <- function(list.stats, plotter, palette = "Set1",
+                                    title = NULL, log10 = FALSE) {
+  if (!(length(list.stats) %in% 2:4)) {
+    stop("Too few/too many factors. Must be between 2 and 4", call. = F)
+  }
+  
+  if (is.null(names(list.stats)) || is.null(names(list.stats[[1]]))) {
+    stop("Invalid factors. Factor or sample names are NOT provided", call. = F)
+  }
+  
+  if (!all(sapply(lapply(list.stats, names),
+                  identical, names(list.stats[[1]])))) {
+    stop("Factors are NOT relevant", call. = F)
+  }
+  
+  cat("Info: Preparing comparison data ...\n")
+  data.raw <- do.call(cbind, list.stats)
+  colnames(data.raw) <- names(list.stats)
+  if (log10) {
+    data.raw <- log10(data.raw)
+  }
+  data <- reshape2::melt(data.raw)
+  data$Var1 <- factor(data$Var1)
+  cat("Info: Comparison data ready\n")
+  
+  cat("Info: Start plotting line comparison graph ...\n")
+  plot <- ggplot(data, aes(x = Var1, y = value, colour = Var2, group = Var2)) +
+    geom_point(size = 1.2) + 
+    geom_line(size = 1) +
+    scale_colour_brewer(name = "Factors\n", palette = palette) +
+    labs(title = ifelse(is.character(title) && trimws(title) != "",
+                        title, "Comparison"),
+         x = "Samples") +
+    plotter$theme
+  
+  ggsave(plotter$file.out$fullname, plot = plot,
+         width = max(7, 2 + 0.12 * nrow(data.raw)), height = 6,
+         units = "in", limitsize = F)
   cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
       sep = "")
 }
@@ -268,7 +312,9 @@ PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
     cat("Info: Input number of clusters: ", n.clust, "\n", sep = "")
   }
   
-  h.cut <- heights_per_k.dendrogram(d)[as.character(n.clust)]
+  heights <- heights_per_k.dendrogram(d)
+  h.max <- ceiling(max(heights))
+  h.cut <- heights[as.character(n.clust)]
   cat("Info: Cutting height: ", h.cut, "\n", sep = "")
   
   colours <- RColorBrewer::brewer.pal(8, "Dark2")
@@ -294,14 +340,17 @@ PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
     pdf(file = file.out$fullname,
         width = 8, height = max(6, 3.5 + 0.11 * nleaves(d)))
   }
-  par(bg = "grey92", mar = c(3, 8, 4, 3))
-  plot_horiz.dendrogram(d, xlim = 1:0, cex.axis = 0.9)
-  title(main = title, line = -3, outer = T)
-  if (group.frame) {
-    rect.dendrogram(d, k = n.clust, border = "#487AA1", horiz = T,
-                    lower_rect = -0.3, lwd = 1.1)
-  }
-  abline(v = h.cut, col = "#F38630", lty = "dashed", lwd = 2)
-  dev.off()
+  tryCatch({
+    par(bg = "grey92", mar = c(3, 8, 4, 3))
+    plot_horiz.dendrogram(d, xlim = c(h.max, 0), cex.axis = 0.9)
+    title(main = title, line = -3, outer = T)
+    if (group.frame) {
+      rect.dendrogram(d, k = n.clust, border = "#487AA1", horiz = T,
+                      lower_rect = -0.25 * h.max, lwd = 1.1)
+    }
+    abline(v = h.cut, col = "#F38630", lty = "dashed", lwd = 2)
+  }, finally = {
+    dev.off()
+  })
   cat("Info: Plot saved in \"", basename(file.out$fullname), "\"\n", sep = "")
 }

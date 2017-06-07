@@ -4,7 +4,7 @@ suppressPackageStartupMessages(library(dendextend))
 
 source("source/transform.R")
 
-PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = "",
+PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = NULL,
                            percentage = FALSE) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
@@ -13,7 +13,7 @@ PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = "",
   UseMethod("PlotSsm6Basics", mut.ctx)
 }
 
-PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = "", order = NULL) {
+PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = NULL, order = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -21,7 +21,7 @@ PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = "", order = NULL) {
   UseMethod("PlotSsm6Spectrum", mut.ctx)
 }
 
-PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = "") {
+PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -29,7 +29,7 @@ PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = "") {
   UseMethod("PlotSsm96Heatmap", mut.ctx)
 }
 
-PlotSsmCounts <- function(mut.ctx, plotter, geno.type = "", log10 = TRUE) {
+PlotSsmCounts <- function(mut.ctx, plotter, geno.type = NULL, log10 = TRUE) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -37,7 +37,7 @@ PlotSsmCounts <- function(mut.ctx, plotter, geno.type = "", log10 = TRUE) {
   UseMethod("PlotSsmCounts", mut.ctx)
 }
 
-PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = "") {
+PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -45,8 +45,8 @@ PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = "") {
   UseMethod("PlotSsmSignatures", ssm.sigs)
 }
 
-PlotSsmSigContribution <- function(ssm.sigs, plotter,
-                                   geno.type = "", order = NULL) {
+PlotSsmSigContribution <- function(ssm.sigs, plotter, geno.type = NULL,
+                                   order = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -54,7 +54,7 @@ PlotSsmSigContribution <- function(ssm.sigs, plotter,
   UseMethod("PlotSsmSigContribution", ssm.sigs)
 }
 
-PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = "") {
+PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -62,12 +62,21 @@ PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = "") {
   UseMethod("PlotCosineSimilarity", ssm.sigs)
 }
 
-PlotMeasures <- function(nmf, plotter, geno.type = "") {
+PlotMeasures <- function(nmf, plotter, geno.type = NULL) {
   if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
     stop("Invalid 'plotter'", call. = F)
   }
   
   UseMethod("PlotMeasures", nmf)
+}
+
+PlotLineComparison <- function(list.stats, plotter, palette = "Set1",
+                               title = NULL, log10 = FALSE) {
+  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  UseMethod("PlotLineComparison", list.stats)
 }
 
 PlotDendrogram <- function(fit, file.out, n.clust = NULL,

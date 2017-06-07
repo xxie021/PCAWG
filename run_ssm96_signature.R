@@ -137,7 +137,7 @@ if (!is.matrix(mut.ctx) || nrow(mut.ctx) != 96) {
        call. = F)
 }
 
-if (ncol(mut.ctx) < 10) {
+if (ncol(mut.ctx) < 10 && opt$n_signatures < 2) {
   stop("Too few samples/genomes", call. = F)
 }
 

@@ -1,6 +1,8 @@
 Sys.setenv(BIOCINSTALLER_ONLINE_DCF = F)
 suppressPackageStartupMessages(library(SomaticSignatures))
 suppressPackageStartupMessages(library(NMF))
+suppressPackageStartupMessages(library(bioDist))
+suppressPackageStartupMessages(library(deconstructSigs))
 
 # Constants
 kNumOfGenomes <- c(10, 20, 30, 50, 100, 200)
@@ -187,6 +189,176 @@ AddSsm96MinorMutationTypes <- function(mt.sigs) {
   }
   
   return(all.sigs)
+}
+
+# Merges multiple signature sets/matrices generated from different tumour types.
+# Those signature matrices may have different number of rows due to the removal
+# of minor mutation types. In order to process properly, removed minor types
+# are added back prior to merging so that each individual signature matrix has
+# the equal number of rows (96 rows).
+# @param  list.sigs   a named list of the {@code MutationalSignatures} objects
+# @return             a merged signature matrix with 96 rows representing
+#                     mutation types
+MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
+  if (!is.list(list.sigs)) {
+    stop("Invalid MutationalSignatures list", call. = F)
+  }
+  
+  sig.names <- names(list.sigs)
+  if (is.null(sig.names) || any(trimws(sig.names) == "")) {
+    stop("MutationalSignatures list must have a name for each element",
+         call. = F)
+  }
+  
+  sigs <- do.call(cbind, lapply(names(list.sigs), function(name, list.sigs) {
+    if (class(list.sigs[[name]])[1] != "MutationalSignatures") {
+      stop("Invalid MutationalSignatures is found in the list", call. = F)
+    }
+    
+    mt.sigs <- signatures(list.sigs[[name]])
+    colnames(mt.sigs) <- paste0(name, ".", colnames(mt.sigs))
+    return(AddSsm96MinorMutationTypes(mt.sigs))
+  }, list.sigs = list.sigs))
+  
+  return(sigs)
+}
+
+# Performs agglomerative hierarchical cluster analysis on mutational signatures.
+# @param  mt.sigs     a signature matrix
+# @param  dist        one of the seven proximity measures:
+#                     (1) euclidean
+#                     (2) maximum
+#                     (3) manhattan
+#                     (4) canberra
+#                     (5) binary
+#                     (6) cosine
+#                     (7) correlation
+#                     (8) spearman
+# @param  method      one (or an unambiguous abbreviation) of the eight
+#                     agglomeration methods to be used:
+#                     (1) ward.D
+#                     (2) ward.D2
+#                     (3) single
+#                     (4) complete
+#                     (5) average (= UPGMA)
+#                     (6) mcquitty (= WPGMA)
+#                     (7) median (= WPGMC)
+#                     (8) centroid (= UPGMC)
+# @param  seed        the seed for hierarchical cluster analysis
+# @return             the fit of model found by the cluster analysis
+ClusterSignatures <- function(mt.sigs, dist = "cosine",
+                              method = "complete", seed = 42) {
+  if (tolower(dist) == "spearman") {
+    distances <- spearman.dist(t(mt.sigs))
+  } else {
+    distances <- proxy::dist(t(mt.sigs), method = dist)
+  }
+  set.seed(seed)
+  fit <- hclust(distances, method = method)
+  
+  return(fit)
+}
+
+# Summaries a consensus mutational signature from a cluster baesd on
+# weighted average of mutation counts of each signature.
+# @param  mt.sigs     a signature matrix of a cluster
+# @param  sig.name    the string name of the consensus mutational signature
+# @return             the summarised consensus mutational signature matrix
+GenConsensusSignature <- function(mt.sigs, sig.name = NULL) {
+  if (ncol(mt.sigs) == 1) {
+    sig.consensus <- mt.sigs
+  } else {
+    sig.consensus <- as.matrix(
+      rowSums(sweep(mt.sigs, 2, colSums(mt.sigs), `*`) / sum(mt.sigs)))
+  }
+  
+  if (is.character(sig.name) && length(sig.name) == 1 &&
+      trimws(sig.name) != "") {
+    colnames(sig.consensus) <- sig.name
+  }
+  return(sig.consensus)
+}
+
+# Summaries consensus mutational signatures for multiple clusters.
+# @param  mt.sigs     an aggregated signature matrix of multiple clusters
+# @param  cluster     a named list indicating the cluster indexes for each
+#                     tumour type (names)
+# @param  sig.names   the list of string names to be assigned to summarised
+#                     consensus mutational signatures, used as the prefix if
+#                     containing only one name or its length must be equal
+#                     to the number of clusters
+# @return             the summarised consensus mutational signatures matrix
+#                     for each cluster
+GenConsensusSignatures <- function(mt.sigs, clusters, sig.names = NULL) {
+  if (!identical(sort(colnames(mt.sigs)), sort(names(clusters)))) {
+    stop("'mt.sigs' and 'clusters' are NOT related", call. = F)
+  }
+  
+  if (is.null(sig.names) || !is.character(sig.names)) {
+    sig.names <- "S"
+  }
+  
+  if (length(sig.names) == 1) {
+    sig.names <- paste0(sig.names, ".", sort(unique(clusters)))
+  } else if (length(sig.names) != length(unique(clusters))) {
+    stop("Length of 'clusters' and 'sig.names' are NOT equal", call. = F)
+  }
+  
+  sigs.consensus <- do.call("cbind", lapply(sort(unique(clusters)), function(idx) {
+    sigs.names.single.clust <- names(clusters)[which(clusters == idx)]
+    sigs.single.clust <- as.matrix(mt.sigs[, sigs.names.single.clust])
+    return(GenConsensusSignature(sigs.single.clust))
+  }))
+  
+  colnames(sigs.consensus) <- sig.names
+  return(sigs.consensus)
+}
+
+# Evaluates reconstruction error of each sample against multiple consensus
+# mutational signatures.
+# @param  mt.samples  a sample (96 rows/mutation types) matrix
+# @param  mt.sigs     a matrix of consensus mutational signatures, using
+#                     COSMIC published signatures if NULL
+# @return             the evaluation matrix containing number of included
+#                     signatures, reconstruction error and signature weights
+#                     for each sample
+EvalSsm96Signatures <- function(mt.samples, mt.sigs = NULL) {
+  if (is.matrix(mt.samples) && nrow(mt.samples) == 96) {
+    df.samples <- as.data.frame(t(mt.samples))
+    colnames(df.samples) <- colnames(signatures.cosmic)
+  } else {
+    stop("Invalid 'mt.samples'. Must be a matrix with 96 rows", call. = F)
+  }
+  
+  if (is.null(mt.sigs)) {
+    df.sigs <- signatures.cosmic
+  } else if (is.matrix(mt.sigs) && nrow(mt.sigs) == 96) {
+    df.sigs <- as.data.frame(t(mt.sigs))
+    colnames(df.sigs) <- colnames(signatures.cosmic)
+  } else {
+    stop("Invalid 'mt.sigs'. Must be a matrix with 96 rows", call. = F)
+  }
+  
+  res <- do.call(rbind, lapply(row.names(df.samples), function(sample.name) {
+    cat("Info: Evaluating sample '", sample.name, "' ... \n", sep = "")
+    sample <- df.samples[sample.name, ]
+    n.muts <- sum(sample)
+    stats <- whichSignatures(tumor.ref = sample, signatures.ref = df.sigs,
+                             contexts.needed = T)
+    n.sigs <- length(which(stats$weights > 0))
+    cat("Info: #signatures contributed: ", n.sigs, "\n", sep = "")
+    err <- round(sqrt(sum(stats$diff * stats$diff)), digits = 3)
+    cat("Info: Error: ", err, "\n", sep = "")
+    
+    return(c(n.muts, n.sigs, err, stats$weights[1, ]))
+  }))
+  
+  res <- matrix(unlist(res), nrow = nrow(df.samples),
+                dimnames = list(
+                  row.names(df.samples),
+                  c("n.mutations", "n.sigs", "error", row.names(df.sigs))
+                ))
+  return(res)
 }
 
 ###################

@@ -44,17 +44,54 @@ MergeMotifMatrixFromSamples <- function(sample.set) {
     stop("Invalid or too few VariantSample set", call. = F)
   }
   
-  if (any(sapply(sample.set, function(spl) class(spl)[3] != "SsmSample"))) {
+  if (!all(sapply(sample.set, inherits, "SsmSample"))) {
     stop("Invalid VariantSample is found in the set", call. = F)
   }
   
   return(MergeMotifMatrix(lapply(sample.set, function(sample) sample$mut.ctx)))
 }
 
+# Indicates the tumour type(s) that each consensus mutational signature
+# comes from.
+# @param  clusters    a named vector indicating the cluster indexes for each
+#                     tumour type (names), usually the return of the
+#                     {@code cutree} function
+# @param  sig.prefix  the string name prefix for consensus mutational signatures
+# @return             the matrix showing the tumour type(s) that each consensus
+#                     mutational signature comes from
+LinkTumourType2Signature <- function(clusters, sig.prefix = "S") {
+  indv.names <- names(clusters)
+  if (is.null(indv.names)) {
+    stop("Invalid 'clusters'. Must be the return of the 'cutree' function",
+         call. = F)
+  }
+  
+  if (!is.character(sig.prefix) || length(sig.prefix) != 1 ||
+      trimws(sig.prefix) == "") {
+    cat("Warn: 'sig.prefix' is incorrect. Use default\n")
+    sig.prefix <- "S"
+  }
+  sigs.consensus <- paste0(sig.prefix, ".", sort(unique(clusters)))
+  
+  tumour.types <- unique(sapply(indv.names, function(name) {
+    return(strsplit(name, split = "\\.")[[1]][1])
+  }))
+  
+  res <- matrix(rep(0, length(sigs.consensus) * length(tumour.types)),
+                ncol = length(tumour.types),
+                dimnames = list(sigs.consensus, tumour.types))
+  
+  bin <- sapply(indv.names, function(name) {
+    res[clusters[name], strsplit(name, split = "\\.")[[1]][1]] <<- 1
+  })
+  
+  return(res)
+}
+
 # Saves data into an RData file with a customised object name.
-# @param  data      data to be saved into an RData file
-# @param  file.out  an {@code RDataFileOut} object
-# @param  obj.name  the customised variable name of an RData object
+# @param  data        data to be saved into an RData file
+# @param  file.out    an {@code RDataFileOut} object
+# @param  obj.name    the customised variable name of an RData object
 Save2RData <- function(data, file.out, obj.name = NULL) {
   UseMethod("Save2RData", file.out)
 }

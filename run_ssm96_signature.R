@@ -42,7 +42,6 @@ options <- list(
               action = "store_true",
               default = FALSE,
               help = "Indicate if storing plots in JPG format"),
-  
   make_option(c("--log10_count"),
               action = "store_true",
               default = FALSE,
@@ -87,7 +86,7 @@ if (is.null(opt$parent_dir)) {
 if (is.null(opt$cosine_low) || is.null(opt$cosine_high) ||
     opt$cosine_low <= 0 || opt$cosine_high >= 1 ||
     opt$cosine_low > opt$cosine_high) {
-  stop("COSINE threahold must be a fraction satisfying (0 < low <= high < 1)",
+  stop("COSINE threshold must be a fraction satisfying (0 < low <= high < 1)",
        call. = F)
 }
 
@@ -148,8 +147,7 @@ source("source/plot-core.R")
 source("source/utils.R")
 
 cat("Info: Removing minor mutation types ...\n")
-mut.ctx.reduced <- RemoveMinorMutationTypes(mut.ctx, threshold = 0.01,
-                                            normalise = opt$normalise)
+mut.ctx.reduced <- RemoveMinorMutationTypes(mut.ctx, normalise = opt$normalise)
 
 if (opt$n_signatures > min(nrow(mut.ctx.reduced), ncol(mut.ctx.reduced)) - 1) {
   stop("Too large N_SIGNATURES specified", call. = F)

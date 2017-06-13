@@ -18,14 +18,14 @@ source("source/utils.R")
 Summary <- function(mut.ctx, type, file.out = NULL, rdata.obj.name = NULL) {
   data <- Transform3(mut.ctx, type)
   
-  if (is.object(file.out) && class(file.out)[2] == "XFileOut") {
-    if (class(file.out)[3] == "RDataFileOut") {
+  if (is.object(file.out) && inherits(file.out, "XFileOut")) {
+    if (inherits(file.out, "RDataFileOut")) {
       if (is.character(rdata.obj.name)) {
-        Save2RData(data, file.out, rdata.obj.name)
+        Save2RData(data, file.out, obj.name = rdata.obj.name)
       } else {
         Save2RData(data, file.out)
       }
-    } else if (class(file.out)[3] == "TsvFileOut") {
+    } else if (inherits(file.out, "TsvFileOut")) {
       cat("Info: Saving file \"", basename(file.out$fullname), "\" ...\n",
           sep = "")
       write.table(data, file.out$fullname, quote = F, sep = "\t",

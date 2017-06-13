@@ -6,7 +6,7 @@ source("source/transform.R")
 
 PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = NULL,
                            percentage = FALSE) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -14,7 +14,7 @@ PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = NULL,
 }
 
 PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = NULL, order = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -22,7 +22,7 @@ PlotSsm6Spectrum <- function(mut.ctx, plotter, geno.type = NULL, order = NULL) {
 }
 
 PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -30,7 +30,7 @@ PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = NULL) {
 }
 
 PlotSsmCounts <- function(mut.ctx, plotter, geno.type = NULL, log10 = TRUE) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -38,7 +38,7 @@ PlotSsmCounts <- function(mut.ctx, plotter, geno.type = NULL, log10 = TRUE) {
 }
 
 PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -47,7 +47,7 @@ PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL) {
 
 PlotSsmSigContribution <- function(ssm.sigs, plotter, geno.type = NULL,
                                    order = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -55,7 +55,7 @@ PlotSsmSigContribution <- function(ssm.sigs, plotter, geno.type = NULL,
 }
 
 PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -63,7 +63,7 @@ PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = NULL) {
 }
 
 PlotMeasures <- function(nmf, plotter, geno.type = NULL) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -72,7 +72,7 @@ PlotMeasures <- function(nmf, plotter, geno.type = NULL) {
 
 PlotLineComparison <- function(list.stats, plotter, palette = "Set1",
                                title = NULL, log10 = FALSE) {
-  if (!is.object(plotter) || class(plotter)[2] != "XPlotter") {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
@@ -81,11 +81,11 @@ PlotLineComparison <- function(list.stats, plotter, palette = "Set1",
 
 PlotDendrogram <- function(fit, file.out, n.clust = NULL,
                            group.frame = TRUE, topic = NULL) {
-  if (!is.object(file.out) || class(file.out)[2] != "XFileOut") {
+  if (!is.object(file.out) || !inherits(file.out, "XFileOut")) {
     stop("Invalid 'file.out'", call. = F)
   }
   
-  if (!(class(file.out)[3] %in% c("JpgFileOut", "PdfFileOut"))) {
+  if (!inherits(file.out, "JpgFileOut") && !inherits(file.out, "PdfFileOut")) {
     stop("This type of 'file.out' is currently unsupported", call. = F)
   }
   

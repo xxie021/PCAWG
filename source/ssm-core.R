@@ -211,7 +211,7 @@ MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
   }
   
   sigs <- do.call(cbind, lapply(names(list.sigs), function(name, list.sigs) {
-    if (class(list.sigs[[name]])[1] != "MutationalSignatures") {
+    if (!inherits(list.sigs[[name]], "MutationalSignatures")) {
       stop("Invalid MutationalSignatures is found in the list", call. = F)
     }
     
@@ -281,28 +281,23 @@ GenConsensusSignature <- function(mt.sigs, sig.name = NULL) {
 
 # Summaries consensus mutational signatures for multiple clusters.
 # @param  mt.sigs     an aggregated signature matrix of multiple clusters
-# @param  cluster     a named list indicating the cluster indexes for each
-#                     tumour type (names)
-# @param  sig.names   the list of string names to be assigned to summarised
-#                     consensus mutational signatures, used as the prefix if
-#                     containing only one name or its length must be equal
-#                     to the number of clusters
+# @param  clusters    a named vector indicating the cluster indexes for each
+#                     tumour type (names), usually the return of the
+#                     {@code cutree} function
+# @param  sig.prefix  the string name prefix for consensus mutational signatures
 # @return             the summarised consensus mutational signatures matrix
 #                     for each cluster
-GenConsensusSignatures <- function(mt.sigs, clusters, sig.names = NULL) {
+GenConsensusSignatures <- function(mt.sigs, clusters, sig.prefix = "S") {
   if (!identical(sort(colnames(mt.sigs)), sort(names(clusters)))) {
     stop("'mt.sigs' and 'clusters' are NOT related", call. = F)
   }
   
-  if (is.null(sig.names) || !is.character(sig.names)) {
-    sig.names <- "S"
+  if (!is.character(sig.prefix) || length(sig.prefix) != 1 ||
+      trimws(sig.prefix) == "") {
+    cat("Warn: 'sig.prefix' is incorrect. Use default\n")
+    sig.prefix <- "S"
   }
-  
-  if (length(sig.names) == 1) {
-    sig.names <- paste0(sig.names, ".", sort(unique(clusters)))
-  } else if (length(sig.names) != length(unique(clusters))) {
-    stop("Length of 'clusters' and 'sig.names' are NOT equal", call. = F)
-  }
+  sig.names <- paste0(sig.prefix, ".", sort(unique(clusters)))
   
   sigs.consensus <- do.call("cbind", lapply(sort(unique(clusters)), function(idx) {
     sigs.names.single.clust <- names(clusters)[which(clusters == idx)]
@@ -314,15 +309,25 @@ GenConsensusSignatures <- function(mt.sigs, clusters, sig.names = NULL) {
   return(sigs.consensus)
 }
 
-# Evaluates reconstruction error of each sample against multiple consensus
-# mutational signatures.
+# Reconstructs each sample using consensus mutational signatures and
+# summarizes signature prevalence.
 # @param  mt.samples  a sample (96 rows/mutation types) matrix
+# @param  tumour.type the string tumour name of the sample matrix
 # @param  mt.sigs     a matrix of consensus mutational signatures, using
 #                     COSMIC published signatures if NULL
-# @return             the evaluation matrix containing number of included
-#                     signatures, reconstruction error and signature weights
-#                     for each sample
-EvalSsm96Signatures <- function(mt.samples, mt.sigs = NULL) {
+# @param  threshold   the cutoff fraction to filter out insignificant
+#                     mutational signatures associated with the entire set
+# @return             the list containing raw data of the reconstruction
+#                     details of each sample and summary data of signature
+#                     prevalence
+SummarizeSsm96SignaturePrevalence <- function(mt.samples, tumour.type,
+                                              mt.sigs = NULL,
+                                              threshold = 0.25) {
+  if (!is.character(tumour.type) || length(tumour.type) != 1 ||
+      trimws(tumour.type) == "") {
+    stop("Invalid or empty 'tumour.type'", call. = F)
+  }
+  
   if (is.matrix(mt.samples) && nrow(mt.samples) == 96) {
     df.samples <- as.data.frame(t(mt.samples))
     colnames(df.samples) <- colnames(signatures.cosmic)
@@ -353,12 +358,21 @@ EvalSsm96Signatures <- function(mt.samples, mt.sigs = NULL) {
     return(c(n.muts, n.sigs, err, stats$weights[1, ]))
   }))
   
-  res <- matrix(unlist(res), nrow = nrow(df.samples),
-                dimnames = list(
-                  row.names(df.samples),
-                  c("n.mutations", "n.sigs", "error", row.names(df.sigs))
-                ))
-  return(res)
+  res.raw <- matrix(unlist(res), nrow = nrow(df.samples),
+                    dimnames = list(
+                      row.names(df.samples),
+                      c("n.mutations", "n.sigs", "error", row.names(df.sigs))
+                    ))
+  
+  sigs.contribution <- res.raw[, -1:-3]
+  if (nrow(res.raw) == 1) {
+    sigs.contribution <- t(as.matrix(sigs.contribution))
+  }
+  
+  return(list(
+    raw = res.raw,
+    summary = .DetSignaturePrevalence(sigs.contribution, tumour.type, threshold)
+  ))
 }
 
 ###################
@@ -399,4 +413,22 @@ EvalSsm96Signatures <- function(mt.samples, mt.sigs = NULL) {
     ]$rank[1]
   }
   return(estimate)
+}
+
+.DetSignaturePrevalence <- function(mt.contribution, tumour.type,
+                                    threshold = 0.25) {
+  contribution <- reshape2::melt(mt.contribution, value.name = "fraction")
+  # If a sample is reconstructed by a consensus signature with contribution
+  # less than the threshold, that signature is considered insignificant and
+  # hance not counted for the entire set of the tumour type
+  sigs.significant <- as.character(unique(contribution$Var2[
+    which(contribution$fraction >= threshold)]))
+  
+  res <- matrix(c(length(sigs.significant),
+                  rep(0, times = ncol(mt.contribution))), nrow = 1,
+                dimnames = list(trimws(tumour.type),
+                                c("n.sigs", colnames(mt.contribution))))
+  res[, sigs.significant] <- 1
+  
+  return(res)
 }

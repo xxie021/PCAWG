@@ -332,7 +332,7 @@ PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
   }
   
   cat("Info: Start plotting cluster dendrogram ...\n")
-  if (class(file.out)[3] == "JpgFileOut") {
+  if (inherits(file.out, "JpgFileOut")) {
     jpeg(filename = file.out$fullname,
          width = 8, height = max(6, 3.5 + 0.11 * nleaves(d)),
          units = "in", res = 300)

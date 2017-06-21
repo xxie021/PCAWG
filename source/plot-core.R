@@ -210,9 +210,9 @@ PlotSigPrevalence.matrix <- function(prevalence, plotter, n.samples = NULL) {
 PlotSigPrevalence.data.frame <- function(prevalence, plotter,
                                          n.samples = NULL) {
   if (!identical(sort(colnames(prevalence)),
-                 c("n.samples", "percentage", "sig"))) {
+                 c("n.tumour.types", "percentage", "sig"))) {
     stop(paste("Invalid 'prevalence'. Must contain 3 columns:",
-               "\"sig\", \"n.samples\" and \"percentage\""), call. = F)
+               "\"sig\", \"n.tumour.types\" and \"percentage\""), call. = F)
   }
   
   prevalence$sig <- factor(prevalence$sig, levels = prevalence$sig)
@@ -226,7 +226,7 @@ PlotSigPrevalence.data.frame <- function(prevalence, plotter,
   
   cat("Info: Start plotting signature prevalence graph ...\n")
   plot <- ggplot(prevalence) +
-    geom_bar(aes(x = sig, y = n.samples), stat = "identity",
+    geom_bar(aes(x = sig, y = n.tumour.types), stat = "identity",
              colour = "black", fill = "#1B9E77", width = 0.6) +
     geom_line(aes(x = sig, y = percentage, group = 1),
               colour = "#D95F02", size = 0.8) +

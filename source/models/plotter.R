@@ -69,6 +69,14 @@ kContributionTheme.default <- theme(
   axis.text.y = element_text(size = 10)
 )
 
+kPrevalenceGraphTheme.default <- theme(
+  axis.title = element_text(face = "bold", size = 11),
+  axis.title.x = element_text(margin = margin(t = 12)),
+  axis.title.y = element_text(margin = margin(r = 10)),
+  axis.text = element_text(face = "bold", colour = "black", size = 9),
+  axis.text.x = element_text(hjust = 1, vjust = 0.5, angle = 90)
+)
+
 kCosineTheme.default <- theme(
   axis.title = element_blank(),
   axis.text = element_text(face = "bold", colour = "black", size = 11),
@@ -212,6 +220,19 @@ ContributionPlotter <- function(file.out, use.default.theme = TRUE,
   }
   
   class(me) <- append(class(me), "ContributionPlotter")
+  return(me)
+}
+
+PrevalenceGraphPlotter <- function(file.out, use.default.theme = TRUE,
+                                   theme.extra = NULL) {
+  if (use.default.theme) {
+    me <- XPlotter(file.out, theme.extra = kPrevalenceGraphTheme.default +
+                     kLegendTheme.hidden)
+  } else {
+    me <- XPlotter(file.out, theme.extra = theme.extra)
+  }
+  
+  class(me) <- append(class(me), "PrevalenceGraphPlotter")
   return(me)
 }
 

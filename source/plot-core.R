@@ -203,6 +203,56 @@ PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
       sep = "")
 }
 
+PlotSigPrevalence.matrix <- function(prevalence, plotter, n.samples = NULL) {
+  PlotSigPrevalence(as.data.frame(prevalence), plotter, n.samples)
+}
+
+PlotSigPrevalence.data.frame <- function(prevalence, plotter,
+                                         n.samples = NULL) {
+  if (!identical(sort(colnames(prevalence)),
+                 c("n.samples", "percentage", "sig"))) {
+    stop(paste("Invalid 'prevalence'. Must contain 3 columns:",
+               "\"sig\", \"n.samples\" and \"percentage\""), call. = F)
+  }
+  
+  prevalence$sig <- factor(prevalence$sig, levels = prevalence$sig)
+  prevalence$percentage[which(prevalence$percentage < 0.01)] <- 0.01
+  prevalence$percentage <- (log10(prevalence$percentage) + 2) * 10
+  
+  title <- "Prevalence of Mutational Signatures"
+  if (is.numeric(n.samples) && n.samples > 0) {
+    title <- paste0(title, " (#samples = ", as.integer(n.samples), ")")
+  }
+  
+  cat("Info: Start plotting signature prevalence graph ...\n")
+  plot <- ggplot(prevalence) +
+    geom_bar(aes(x = sig, y = n.samples), stat = "identity",
+             colour = "black", fill = "#1B9E77", width = 0.6) +
+    geom_line(aes(x = sig, y = percentage, group = 1),
+              colour = "#D95F02", size = 0.8) +
+    geom_point(aes(x = sig, y = percentage, group = 1),
+               colour = "#D95F02", shape= 18, size = 3) +
+    geom_text(aes(x = sig, y = percentage,
+                  label = paste0(round(10 ^ ((percentage / 10) - 2), 2), "%")),
+              colour = "grey30", fontface = "bold", size = 2.5, vjust = -1) +
+    scale_x_discrete(expand = c(0.02, 0)) + 
+    scale_y_continuous(name = "Number of Cancer Types",
+                       breaks = seq(0, 40, by = 2), limits = c(0, 40),
+                       sec.axis = sec_axis(
+                         trans = ~ . * 2.5,
+                         name = "Prevalence in Cancer Samples",
+                         labels = c("0.0%", "0.1%", "1.0%",
+                                    "10.0%", "100.0%"))) +
+    labs(title = title, x = "Signature") +
+    plotter$theme
+  
+  ggsave(plotter$file.out$fullname, plot = plot, 
+         width = max(10, 1.5 + 0.2 * nrow(prevalence)), height = 7,
+         units = "in", limitsize = F)
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
 PlotCosineSimilarity.MutationalSignatures <- function(ssm.sigs, plotter,
                                                       geno.type = NULL) {
   PlotCosineSimilarity(signatures(ssm.sigs), plotter, geno.type)

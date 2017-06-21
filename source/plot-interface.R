@@ -54,6 +54,14 @@ PlotSsmSigContribution <- function(ssm.sigs, plotter, geno.type = NULL,
   UseMethod("PlotSsmSigContribution", ssm.sigs)
 }
 
+PlotSigPrevalence <- function(prevalence, plotter, n.samples = NULL) {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  UseMethod("PlotSigPrevalence", prevalence)
+}
+
 PlotCosineSimilarity <- function(ssm.sigs, plotter, geno.type = NULL) {
   if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)

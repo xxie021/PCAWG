@@ -14,7 +14,9 @@ MergeMotifMatrix <- function(mut.ctx.set, by.tumour = FALSE,
     stop("Invalid or empty motif matrix set", call. = F)
   }
   
-  if (any(sapply(mut.ctx.set, nrow) != nrow(mut.ctx.set[[1]]))) {
+  # Don't know why sometimes sapply returns a list.
+  # Call unlist to firmly get a vector
+  if (any(unlist(sapply(mut.ctx.set, nrow)) != nrow(mut.ctx.set[[1]]))) {
     stop("Motif matrices in the set have different number of rows", call. = F)
   }
   
@@ -36,19 +38,28 @@ MergeMotifMatrix <- function(mut.ctx.set, by.tumour = FALSE,
   return(merged)
 }
 
-# Merges multiple SSM motif matrices from the given variant sample set.
-# @param  sample.set  a list of the {@code SsmSample} objects
+# Merges multiple SSM or SIM motif matrices from the given variant sample set.
+# @param  sample.set  a list of the {@code SsmSample} or
+#                     {@code SimSample} objects
 # @return             the merged motif matrix
 MergeMotifMatrixFromSamples <- function(sample.set) {
   if (!is.list(sample.set) || length(sample.set) < 2) {
     stop("Invalid or too few VariantSample set", call. = F)
   }
   
-  if (!all(sapply(sample.set, inherits, "SsmSample"))) {
-    stop("Invalid VariantSample is found in the set", call. = F)
+  if (!all(sapply(sample.set, inherits, "SsmSample")) &&
+      !all(sapply(sample.set, inherits, "SimSample"))) {
+    stop("Invalid or different types of VariantSample are found in the set",
+         call. = F)
   }
   
-  return(MergeMotifMatrix(lapply(sample.set, function(sample) sample$mut.ctx)))
+  return(MergeMotifMatrix(lapply(sample.set, function(sample) {
+    if (inherits(sample, "SsmSample")) {
+      return(sample$mut.ctx)
+    }
+    
+    return(sample$mut.len)
+  })))
 }
 
 # Indicates the tumour type(s) that each consensus mutational signature

@@ -1,7 +1,7 @@
 suppressPackageStartupMessages(library(optparse))
 
 #Constant
-kVcfNamePart <- ".consensus.20160830.somatic.snv_mnv"
+kVcfNamePart <- ".consensus.20160830.somatic.indel"
 
 options <- list(
   make_option(c("-l", "--link_file"),
@@ -10,17 +10,14 @@ options <- list(
   make_option(c("-t", "--tumour_type"),
               type = "character",
               help = "Specify tumour type(s) to analyse, separated by comma"),
-  make_option(c("-r", "--refseq"),
-              type = "character",
-              help = "Specify a reference sequence file"),
   make_option(c("-p", "--vcf_path"),
               type = "character",
               default = "",
               help = "Specify a path to access VCF files"),
   make_option(c("-d", "--directory"),
               type = "character",
-              default = "ssm_data/",
-              help = paste("Specify a directory to store SSM96 count data",
+              default = "sim_data/",
+              help = paste("Specify a directory to store SIM count data",
                            "[default %default]"))
 )
 
@@ -36,10 +33,6 @@ cat("Info: Starting script at ", strftime(start.time), " ...\n", sep = "")
 
 if (is.null(opt$link_file)) {
   stop("LINK_FILE must be provided", call. = F)
-}
-
-if (is.null(opt$refseq)) {
-  stop("REFSEQ must be provided", call. = F)
 }
 
 opt$vcf_path <- trimws(opt$vcf_path)
@@ -85,13 +78,13 @@ bin <- lapply(files.per.tumour, function(f) {
   cat("Info: Loading tumour type \"", unique(f$histology_abbreviation), "\", ",
       "total #sample(s): ", length(f$histology_abbreviation), "\n",
       sep = "")
-  ssm.set <- mapply(function(fname, id, name) {
+  sim.set <- mapply(function(fname, id, name) {
     tryCatch({
       cat("Info: Loading VCF file \"", basename(fname), "\" ...\n", sep = "")
       raw.vcf <- readVcf(fname, "hg19", ScanVcfParam(info = NA, samples = NA))
-      ssm <- SsmSample(raw.vcf, FaFile(opt$refseq), id = id, name = name)
+      sim <- SimSample(raw.vcf, id = id, name = name)
       cat("Info: Loading completed\n")
-      return(ssm)
+      return(sim)
     }, error = function(e) {
       stop("Failed to load this VCF file. Stop", call. = F)
     })
@@ -101,17 +94,17 @@ bin <- lapply(files.per.tumour, function(f) {
   name = f$tumor_wgs_aliquot_id,
   SIMPLIFY = F)
   
-  if (length(ssm.set) == 1) {
-    mut.ctx <- ssm.set[[1]]$mut.ctx
+  if (length(sim.set) == 1) {
+    mut.len <- sim.set[[1]]$mut.ctx
   } else {
-    mut.ctx <- MergeMotifMatrixFromSamples(ssm.set)
-    mut.ctx <- mut.ctx[, order(as.integer(colnames(mut.ctx)))]
+    mut.len <- MergeMotifMatrixFromSamples(sim.set)
+    mut.len <- mut.len[, order(as.integer(colnames(mut.len)))]
   }
   geno.type <- tolower(unique(f$histology_abbreviation))
   cat("Info: Preparing output directory ...\n")
-  data.count.fo <- RDataFileOut(paste0(geno.type, ".mut.ctx3.counts"),
-                                out.path = opt$directory)
-  Save2RData(mut.ctx, data.count.fo,
+  data.length.fo <- RDataFileOut(paste0(geno.type, ".indel.length.counts"),
+                                 out.path = opt$directory)
+  Save2RData(mut.len, data.length.fo,
              obj.name = paste0(stringr::str_replace_all(geno.type, "-", "."),
-                               ".mut.ctx"))
+                               ".mut.len"))
 })

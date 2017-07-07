@@ -31,7 +31,7 @@ VariantSample <- function(vcf, id = "", name = "") {
   return(me)
 }
 
-# Somatic substitution mutation
+# Somatic single-base mutation
 SsmSample <- function(vcf, ref, id = "", name = "") {
   if (class(ref) != "FaFile") {
     stop("Invalid reference sequence found", call. = F)

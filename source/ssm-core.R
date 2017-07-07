@@ -8,13 +8,14 @@ suppressPackageStartupMessages(library(deconstructSigs))
 kNumOfGenomes <- c(10, 20, 30, 50, 100, 200)
 kMaxNumOfSignatures <- c(3, 5, 7, 10, 15, 20)
 
-# Removes the maximum set of mutation types in a motif matrix that
-# togther account for less than or equal to the threshold argument.
-# @param  mut.ctx     a motif matrix
-# @param  threshold   the cutoff cumulative fraction to filter out minor types
-# @param  normalise   the flag indicating if the removal is performed based on
-#                     data distribution rather than the mutation counts
-# @return             the motif matrix without minor types
+#' Removes the maximum set of mutation types in a motif matrix that
+#' togther account for less than or equal to the threshold argument.
+#' @param  mut.ctx        a motif matrix
+#' @param  threshold      the cutoff cumulative fraction to filter out minor
+#'                        types
+#' @param  normalise      the flag indicating if the removal is performed based
+#'                        on data distribution rather than the mutation counts
+#' @return                the motif matrix without minor types
 RemoveMinorMutationTypes <- function(mut.ctx, threshold = 0.01,
                                      normalise = F) {
   mut.ctx.in <- mut.ctx
@@ -35,10 +36,10 @@ RemoveMinorMutationTypes <- function(mut.ctx, threshold = 0.01,
   return(reduced.mut.ctx)
 }
 
-# Applies Monte Carlo bootstrap resampling to avoid overfitting.
-# @param  mut.ctx     a motif matrix
-# @param  seed        the seed for resampling
-# @return             the resampled motif matrix
+#' Applies Monte Carlo bootstrap resampling to avoid overfitting.
+#' @param  mut.ctx        a motif matrix
+#' @param  seed           the seed for resampling
+#' @return                the resampled motif matrix
 McBootstrap <- function(mut.ctx, seed = 42) {
   set.seed(seed)
   boot.mut.ctx <- matrix(apply(mut.ctx, 2, function(genome) {
@@ -49,15 +50,15 @@ McBootstrap <- function(mut.ctx, seed = 42) {
   return(boot.mut.ctx)
 }
 
-# Estimates the maximum number of possible signatures based on the given number
-# of genomes. When deciphering signatures, a range of possible numbers need to
-# be tested. This range normally starts from 2 and to such estimated maximum
-# number that follows an exponential-fit. The fitted model is built upon six
-# paired points {@code kNumOfGenomes} and {@code kMaxNumOfSignatures}.
-# @param  n.genomes     the number of genomes for signature construction
-# @param  use.raw       the flag indicating if the six paired points are to be
-#                       used to adjust results that are predicted by the model
-# @return               the estimated maximum number of possible signatures
+#' Estimates the maximum number of possible signatures based on the given number
+#' of genomes. When deciphering signatures, a range of possible numbers need to
+#' be tested. This range normally starts from 2 and to such estimated maximum
+#' number that follows an exponential-fit. The fitted model is built upon six
+#' paired points \code{kNumOfGenomes} and \code{kMaxNumOfSignatures}.
+#' @param  n.genomes      the number of genomes for signature construction
+#' @param  use.raw        the flag indicating if the six paired points are to be
+#'                        used to adjust results that are predicted by the model
+#' @return                the estimated maximum number of possible signatures
 EstMaxNumOfSignatures <- function(n.genomes, use.raw = FALSE) {
   # If the raw values are used and the number of genomes passed in is
   # one of them, return directly
@@ -70,7 +71,7 @@ EstMaxNumOfSignatures <- function(n.genomes, use.raw = FALSE) {
                start = list(a = 0, b = 0))
   estimate <- ceiling(predict(model, data.frame(n_genome = n.genomes)))
   
-  # If the raw values are used, adjust the estimated number based on adjacent 
+  # If the raw values are used, adjust the estimated number based on adjacent
   # values. E.g. if the estimated number of 110 genomes is outside [15, 20],
   # it should be adjusted into this range as 110 falls between 100 and 200
   if (use.raw && n.genomes < max(fit.data$n_genome)) {
@@ -90,29 +91,29 @@ EstMaxNumOfSignatures <- function(n.genomes, use.raw = FALSE) {
   return(estimate)
 }
 
-# Constructs signatures based on NMF. RSS and CCC are used jointly to determine
-# the optimal number of signatures, a.k.a. "k". The cosine similarity is also
-# used to evaluate possible results. Two thresholds can be set, namely,
-# {@code cosine.low} and {@code cosine.high}. If the cosine similarity between
-# any two single signatures is less than {@code cosine.low}, those signatures
-# are said to be completedly different. In contrast, if the cosine similarity
-# between any two signatures hits {@code cosine.high}, they are considered as
-# redundant and hence one of them should be removed. However, if the cosine
-# similarity falls into the range between {@code cosine.low} (inclusive) and
-# {@code cosine.high} (exclusive), visual inspection is required to detemine
-# if the two signatures are identical not. In this case, the function also
-# prints a warning message to alert users.
-# @param  nmf           an NMF.rank object
-# @param  mut.ctx       a motif matrix
-# @param  rss.threshold the threshold of percentile for the "k" selection
-#                       based on RSS
-# @param  seed          the seed to run NMF
-# @param  cosine.low    the lower bound of cosine value to indicate different
-#                       signatures
-# @param  cosine.high   the upper bound of cosine value to indicate redundant
-#                       signatures
-# @return               the MutationalSignatures object storing deciphered
-#                       signatures
+#' Constructs signatures based on NMF. RSS and CCC are used jointly to determine
+#' the optimal number of signatures, a.k.a. "k". The cosine similarity is also
+#' used to evaluate possible results. Two thresholds can be set, namely,
+#' \code{cosine.low} and \code{cosine.high}. If the cosine similarity between
+#' any two single signatures is less than \code{cosine.low}, those signatures
+#' are said to be completedly different. In contrast, if the cosine similarity
+#' between any two signatures hits \code{cosine.high}, they are considered as
+#' redundant and hence one of them should be removed. However, if the cosine
+#' similarity falls into the range between \code{cosine.low} (inclusive) and
+#' \code{cosine.high} (exclusive), visual inspection is required to detemine
+#' if the two signatures are identical not. In this case, the function also
+#' prints a warning message to alert users.
+#' @param  nmf            an NMF.rank object
+#' @param  mut.ctx        a motif matrix
+#' @param  rss.threshold  the threshold of percentile for the "k" selection
+#'                        based on RSS
+#' @param  seed           the seed to run NMF
+#' @param  cosine.low     the lower bound of cosine value to indicate different
+#'                        signatures
+#' @param  cosine.high    the upper bound of cosine value to indicate redundant
+#'                        signatures
+#' @return                the MutationalSignatures object storing deciphered
+#'                        signatures
 ConstSignatures <- function(nmf, mut.ctx,
                             rss.threshold = 0.8, seed = 42,
                             cosine.low = 0.55, cosine.high = 0.85) {
@@ -164,9 +165,9 @@ ConstSignatures.NMF.rank <- function(nmf, mut.ctx,
   return(sigs)
 }
 
-# Adds removed minor mutation types back to the signature matrix with zeros.
-# @param  mt.sigs     a signature matrix
-# @return             the signature matrix with all 96 mutation types
+#' Adds removed minor mutation types back to the signature matrix with zeros.
+#' @param  mt.sigs        a signature matrix
+#' @return                the signature matrix with all 96 mutation types
 AddSsm96MinorMutationTypes <- function(mt.sigs) {
   mut.types <- c("CA", "CG", "CT", "TA", "TC", "TG")
   nt.bases <- c("A", "C", "G", "T")
@@ -191,14 +192,15 @@ AddSsm96MinorMutationTypes <- function(mt.sigs) {
   return(all.sigs)
 }
 
-# Merges multiple signature sets/matrices generated from different tumour types.
-# Those signature matrices may have different number of rows due to the removal
-# of minor mutation types. In order to process properly, removed minor types
-# are added back prior to merging so that each individual signature matrix has
-# the equal number of rows (96 rows).
-# @param  list.sigs   a named list of the {@code MutationalSignatures} objects
-# @return             a merged signature matrix with 96 rows representing
-#                     mutation types
+#' Merges multiple signature sets/matrices generated from different tumour
+#' types. Those signature matrices may have different number of rows due to the
+#' removal of minor mutation types. In order to process properly, removed minor
+#' types are added back prior to merging so that each individual signature
+#' matrix has the equal number of rows (96 rows).
+#' @param  list.sigs      a named list of the \code{MutationalSignatures}
+#'                        objects
+#' @return                a merged signature matrix with 96 rows representing
+#'                        mutation types
 MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
   if (!is.list(list.sigs)) {
     stop("Invalid MutationalSignatures list", call. = F)
@@ -223,29 +225,30 @@ MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
   return(sigs)
 }
 
-# Performs agglomerative hierarchical cluster analysis on mutational signatures.
-# @param  mt.sigs     a signature matrix
-# @param  dist        one of the seven proximity measures:
-#                     (1) euclidean
-#                     (2) maximum
-#                     (3) manhattan
-#                     (4) canberra
-#                     (5) binary
-#                     (6) cosine
-#                     (7) correlation
-#                     (8) spearman
-# @param  method      one (or an unambiguous abbreviation) of the eight
-#                     agglomeration methods to be used:
-#                     (1) ward.D
-#                     (2) ward.D2
-#                     (3) single
-#                     (4) complete
-#                     (5) average (= UPGMA)
-#                     (6) mcquitty (= WPGMA)
-#                     (7) median (= WPGMC)
-#                     (8) centroid (= UPGMC)
-# @param  seed        the seed for hierarchical cluster analysis
-# @return             the fit of model found by the cluster analysis
+#' Performs agglomerative hierarchical cluster analysis on mutational
+#' signatures.
+#' @param  mt.sigs        a signature matrix
+#' @param  dist           one of the seven proximity measures:
+#'                        (1) euclidean
+#'                        (2) maximum
+#'                        (3) manhattan
+#'                        (4) canberra
+#'                        (5) binary
+#'                        (6) cosine
+#'                        (7) correlation
+#'                        (8) spearman
+#' @param  method         one (or an unambiguous abbreviation) of the eight
+#'                        agglomeration methods to be used:
+#'                        (1) ward.D
+#'                        (2) ward.D2
+#'                        (3) single
+#'                        (4) complete
+#'                        (5) average (= UPGMA)
+#'                        (6) mcquitty (= WPGMA)
+#'                        (7) median (= WPGMC)
+#'                        (8) centroid (= UPGMC)
+#' @param  seed           the seed for hierarchical cluster analysis
+#' @return                the fit of model found by the cluster analysis
 ClusterSignatures <- function(mt.sigs, dist = "cosine",
                               method = "complete", seed = 42) {
   if (tolower(dist) == "spearman") {
@@ -259,11 +262,11 @@ ClusterSignatures <- function(mt.sigs, dist = "cosine",
   return(fit)
 }
 
-# Summaries a consensus mutational signature from a cluster baesd on
-# weighted average of mutation counts of each signature.
-# @param  mt.sigs     a signature matrix of a cluster
-# @param  sig.name    the string name of the consensus mutational signature
-# @return             the summarised consensus mutational signature matrix
+#' Summaries a consensus mutational signature from a cluster baesd on
+#' weighted average of mutation counts of each signature.
+#' @param  mt.sigs        a signature matrix of a cluster
+#' @param  sig.name       the string name of the consensus mutational signature
+#' @return                the summarised consensus mutational signature matrix
 GenConsensusSignature <- function(mt.sigs, sig.name = NULL) {
   if (ncol(mt.sigs) == 1) {
     sig.consensus <- mt.sigs
@@ -279,14 +282,15 @@ GenConsensusSignature <- function(mt.sigs, sig.name = NULL) {
   return(sig.consensus)
 }
 
-# Summaries consensus mutational signatures for multiple clusters.
-# @param  mt.sigs     an aggregated signature matrix of multiple clusters
-# @param  clusters    a named vector indicating the cluster indexes for each
-#                     tumour type (names), usually the return of the
-#                     {@code cutree} function
-# @param  sig.prefix  the string name prefix for consensus mutational signatures
-# @return             the summarised consensus mutational signatures matrix
-#                     for each cluster
+#' Summaries consensus mutational signatures for multiple clusters.
+#' @param  mt.sigs        an aggregated signature matrix of multiple clusters
+#' @param  clusters       a named vector indicating the cluster indexes for each
+#'                        tumour type (names), usually the return of the
+#'                        \code{cutree} function
+#' @param  sig.prefix     the string name prefix for consensus mutational
+#'                        signatures
+#' @return                the summarised consensus mutational signatures matrix
+#'                        for each cluster
 GenConsensusSignatures <- function(mt.sigs, clusters, sig.prefix = "S") {
   if (!identical(sort(colnames(mt.sigs)), sort(names(clusters)))) {
     stop("'mt.sigs' and 'clusters' are NOT related", call. = F)
@@ -309,17 +313,17 @@ GenConsensusSignatures <- function(mt.sigs, clusters, sig.prefix = "S") {
   return(sigs.consensus)
 }
 
-# Reconstructs each sample using consensus mutational signatures and
-# summarizes signature prevalence.
-# @param  mt.samples  a sample (96 rows/mutation types) matrix
-# @param  tumour.type the string tumour name of the sample matrix
-# @param  mt.sigs     a matrix of consensus mutational signatures, using
-#                     COSMIC published signatures if NULL
-# @param  threshold   the cutoff fraction to filter out insignificant
-#                     mutational signatures associated with the entire set
-# @return             the list containing raw data of the reconstruction
-#                     details of each sample and summary data of signature
-#                     prevalence
+#' Reconstructs each sample using consensus mutational signatures and
+#' summarizes signature prevalence.
+#' @param  mt.samples     a sample (96 rows/mutation types) matrix
+#' @param  tumour.type    the string tumour name of the sample matrix
+#' @param  mt.sigs        a matrix of consensus mutational signatures, using
+#'                        COSMIC published signatures if NULL
+#' @param  threshold      the cutoff fraction to filter out insignificant
+#'                        mutational signatures associated with the entire set
+#' @return                the list containing raw data of the reconstruction
+#'                        details of each sample and summary data of signature
+#'                        prevalence
 SummarizeSsm96SignaturePrevalence <- function(mt.samples, tumour.type,
                                               mt.sigs = NULL,
                                               threshold = 0.25) {

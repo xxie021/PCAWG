@@ -1,13 +1,13 @@
-# Merges multiple motif matrices. If they are to be merged by tumour types,
-# i.e. each set of motif matrix represents a specific type of tumour, all
-# sample-based counts will be added up prior to merging.
-# @param  mut.ctx.set   a list of motif matrices
-# @param  by.tumour     the flag indicating if merging is to be done by
-#                       tumour types
-# @param  tumour.types  an array of tumour types having the same length of 
-#                       {@code mut.ctx.set}; used only when {@code by.tumour}
-#                       is set to TRUE
-# @return               the merged motif matrix
+#' Merges multiple motif matrices. If they are to be merged by tumour types,
+#' i.e. each set of motif matrix represents a specific type of tumour, all
+#' sample-based counts will be added up prior to merging.
+#' @param  mut.ctx.set    a list of motif matrices
+#' @param  by.tumour      the flag indicating if merging is to be done by
+#'                        tumour types
+#' @param  tumour.types   an array of tumour types having the same length of
+#'                        \code{mut.ctx.set}; used only when \code{by.tumour}
+#'                        is set to TRUE
+#' @return                the merged motif matrix
 MergeMotifMatrix <- function(mut.ctx.set, by.tumour = FALSE,
                              tumour.types = "") {
   if (!is.list(mut.ctx.set) || length(mut.ctx.set) < 1) {
@@ -38,10 +38,10 @@ MergeMotifMatrix <- function(mut.ctx.set, by.tumour = FALSE,
   return(merged)
 }
 
-# Merges multiple SSM or SIM motif matrices from the given variant sample set.
-# @param  sample.set  a list of the {@code SsmSample} or
-#                     {@code SimSample} objects
-# @return             the merged motif matrix
+#' Merges multiple SSM or SIM motif matrices from the given variant sample set.
+#' @param  sample.set     a list of the \code{SsmSample} or
+#'                        \code{SimSample} objects
+#' @return                the merged motif matrix
 MergeMotifMatrixFromSamples <- function(sample.set) {
   if (!is.list(sample.set) || length(sample.set) < 2) {
     stop("Invalid or too few VariantSample set", call. = F)
@@ -62,14 +62,15 @@ MergeMotifMatrixFromSamples <- function(sample.set) {
   })))
 }
 
-# Indicates the tumour type(s) that each consensus mutational signature
-# comes from.
-# @param  clusters    a named vector indicating the cluster indexes for each
-#                     tumour type (names), usually the return of the
-#                     {@code cutree} function
-# @param  sig.prefix  the string name prefix for consensus mutational signatures
-# @return             the matrix showing the tumour type(s) that each consensus
-#                     mutational signature comes from
+#' Indicates the tumour type(s) that each consensus mutational signature
+#' comes from.
+#' @param  clusters       a named vector indicating the cluster indexes for
+#'                        each tumour type (names), usually the return of the
+#'                        \code{cutree} function
+#' @param  sig.prefix     the string name prefix for consensus mutational
+#'                        signatures
+#' @return                the matrix showing the tumour type(s) that each
+#'                        consensus mutational signature comes from
 LinkTumourType2Signature <- function(clusters, sig.prefix = "S") {
   indv.names <- names(clusters)
   if (is.null(indv.names)) {
@@ -99,10 +100,10 @@ LinkTumourType2Signature <- function(clusters, sig.prefix = "S") {
   return(res)
 }
 
-# Saves data into an RData file with a customised object name.
-# @param  data        data to be saved into an RData file
-# @param  file.out    an {@code RDataFileOut} object
-# @param  obj.name    the customised variable name of an RData object
+#' Saves data into an RData file with a customised object name.
+#' @param  data           data to be saved into an RData file
+#' @param  file.out       an \code{RDataFileOut} object
+#' @param  obj.name       the customised variable name of an RData object
 Save2RData <- function(data, file.out, obj.name = NULL) {
   UseMethod("Save2RData", file.out)
 }

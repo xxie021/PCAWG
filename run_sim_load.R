@@ -95,7 +95,7 @@ bin <- lapply(files.per.tumour, function(f) {
   SIMPLIFY = F)
   
   if (length(sim.set) == 1) {
-    mut.len <- sim.set[[1]]$mut.ctx
+    mut.len <- sim.set[[1]]$mut.len
   } else {
     mut.len <- MergeMotifMatrixFromSamples(sim.set)
     mut.len <- mut.len[, order(as.integer(colnames(mut.len)))]

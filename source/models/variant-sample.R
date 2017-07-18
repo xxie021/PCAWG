@@ -64,16 +64,18 @@ SsmSample <- function(vcf, ref, id = "", name = "") {
 }
 
 # Somatic indel mutation
-SimSample <- function(vcf, id = "", name = "") {
+SimSample <- function(vcf, id = "", name = "", delins.inc = T) {
   class.name <- "SimSample"
 
   cat("Info: Constructing class \"", class.name, "\" ...\n", sep = "")
   me <- VariantSample(vcf, id, name)
   idx.ins <- which(isInsertion(me$vcf))
   idx.del <- which(isDeletion(me$vcf))
+  idx.delins <- which(isDelins(me$vcf))
 
   me$idx.ins <- idx.ins
   me$idx.del <- idx.del
+  me$idx.delins <- idx.delins
   
   len.all <- sapply(which(isIndel(me$vcf)), function(idx) {
     len <- width(alt(me$vcf)[[idx]]) - width(ref(me$vcf)[idx])
@@ -98,6 +100,11 @@ SimSample <- function(vcf, id = "", name = "") {
                        dimnames = list(c("ins.C", "ins.T", "ins.2to5",
                                          "ins.5p", "del.C", "del.T", "del.2to5",
                                          "del.5p"), GenSampleName(me)))
+  
+  if (delins.inc) {
+    me$mut.len <- rbind(me$mut.len, length(me$idx.delins))
+    row.names(me$mut.len)[9] <- "delins"
+  }
 
   class(me) <- append(class(me), class.name)
   cat("Info: Class \"", class.name, "\" constructed\n", sep = "")

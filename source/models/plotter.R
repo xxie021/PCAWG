@@ -46,7 +46,7 @@ kBoxCountTheme.default <- theme(
   axis.title = element_text(face = "bold", colour = "black", size = 12),
   axis.title.x = element_text(margin = margin(t = 12)),
   axis.text = element_text(face = "bold", colour = "black"),
-  axis.text.x = element_text(hjust = 0, vjust = 0.5, angle = 90, size = 7),
+  axis.text.x = element_text(hjust = 1, vjust = 0.5, angle = 90, size = 7),
   axis.text.y = element_text(size = 10)
 )
 
@@ -55,6 +55,7 @@ kSignatureTheme.default <- theme(
   axis.title.x = element_text(margin = margin(t = 12)),
   axis.title.y = element_text(margin = margin(r = 10)),
   axis.text = element_text(face = "bold", colour = "black"),
+  axis.text.x = element_text(family = "mono", size = 6),
   axis.text.y = element_text(family = "sans", size = 7.5),
   strip.background = element_rect(fill = "lavender"),
   strip.text = element_text(face = "bold", size = 9)
@@ -201,7 +202,8 @@ BoxCountPlotter <- function(file.out, use.default.theme = TRUE,
 SignaturePlotter <- function(file.out, use.default.theme = TRUE,
                              theme.extra = NULL) {
   if (use.default.theme) {
-    me <- XPlotter(file.out, theme.extra = kSignatureTheme.default)
+    me <- XPlotter(file.out,
+                   theme.extra = kSignatureTheme.default + kLegendTheme.hidden)
   } else {
     me <- XPlotter(file.out, theme.extra = theme.extra)
   }

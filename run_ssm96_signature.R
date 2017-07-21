@@ -142,7 +142,7 @@ if (ncol(mut.ctx) < 10 && opt$n_signatures < 2) {
 
 cat("Info: Loading libraries and scripts ...\n")
 source("source/models/plotter.R")
-source("source/ssm-core.R")
+source("source/signature-core.R")
 source("source/plot-core.R")
 source("source/utils.R")
 
@@ -153,8 +153,9 @@ if (opt$n_signatures > min(nrow(mut.ctx.reduced), ncol(mut.ctx.reduced)) - 1) {
   stop("Too large N_SIGNATURES specified", call. = F)
 }
 
-cat("Info: Bootstrapping ...\n")
-mut.ctx.boot <- McBootstrap(mut.ctx.reduced)
+#cat("Info: Bootstrapping ...\n")
+#mut.ctx.boot <- McBootstrap(mut.ctx.reduced)
+mut.ctx.boot <- mut.ctx.reduced
 
 if (opt$normalise) {
   cat("Info: Normalising data ...\n")
@@ -164,7 +165,8 @@ if (opt$normalise) {
 if (opt$n_signatures < 2) {
   # Number of signatures is not provided
   cat("Info: Estimating 'k' range ...\n")
-  max.k <- EstMaxNumOfSignatures(ncol(mut.ctx.boot))
+  max.k <- min(EstMaxNumOfSignatures(ncol(mut.ctx.boot)),
+               nrow(mut.ctx.boot) - 1)
   cat("Info: 'k' in [2, ", max.k, "] will be tested\n", sep = "")
 
   if (max.k > 2) {
@@ -196,14 +198,15 @@ if (geno.type == "wg") {
 }
 
 count.plotter <- BoxCountPlotter(plot.count.fo)
-PlotSsmCounts(mut.ctx, count.plotter, geno.type = geno.type, opt$log10_count)
+PlotMutationTypeCounts(mut.ctx, count.plotter, geno.type = geno.type,
+                       opt$log10_count)
 
 sig.plotter <- SignaturePlotter(plot.sig.fo)
 PlotSsmSignatures(sigs, sig.plotter, geno.type = geno.type)
 
 contri.plotter <- ContributionPlotter(plot.contri.fo)
-PlotSsmSigContribution(sigs, contri.plotter, geno.type = geno.type,
-                       order = opt$sort_contribution_by)
+PlotSigContribution(sigs, contri.plotter, geno.type = geno.type,
+                    order = opt$sort_contribution_by)
 
 cos.plotter <- CosinePlotter(plot.cos.fo)
 PlotCosineSimilarity(sigs, cos.plotter, geno.type = geno.type)

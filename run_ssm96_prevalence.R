@@ -99,7 +99,7 @@ if (!is.null(opt$consensus_signatures) &&
 }
 
 cat("Info: Loading libraries and scripts ...\n")
-source("source/ssm-core.R")
+source("source/signature-core.R")
 source("source/utils.R")
 
 sigs.prevalence <- do.call(rbind, lapply(sample.files, function(file) {

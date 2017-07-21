@@ -10,24 +10,25 @@ kNtBase <- c("A", "C", "G", "T")
 kMutBase <- c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
 kNumOfMutCtx3 <- 96
 
-# Transforms a motif matrix to the requested format. The ending "3" in the
-# function name indicates the support of context motifs with length = 3 only
-# @param      mut.ctx     a motif matrix (3-mer context, 96 rows)
-# @param      type        one of the five types related to internal functions:
-#                         (1) base.summary
-#                         (2) base.spectrum
-#                         (3) base.ctx.summary
-#                         (4) base.ctx.heatmap.plot
-#                         (5) base.ctx.heatmap.real
-# @param(opt) normalise   the flag indicating if data need to be normalised;
-#                         used with the type "base.summary" only
-# @param(opt) order       one of the base substitution in {@code kMutBase} to
-#                         order the result; used with the type "base.spectrum"
-#                         only
-# @param(opt) data.type   either "frac" or "log" indicating if data need to be
-#                         converted into fraction or Log 10 scale; used with
-#                         the type "base.ctx.heatmap.real" only
-# @return                 the requested format of the motif matrix
+#' Transforms a motif matrix to the requested format. The ending "3" in the
+#' function name indicates the support of context motifs with length = 3 only
+#' @param  mut.ctx        a motif matrix (3-mer context, 96 rows)
+#' @param  type           one of the five types related to internal functions:
+#'                        (1) base.summary
+#'                        (2) base.spectrum
+#'                        (3) base.ctx.summary
+#'                        (4) base.ctx.heatmap.plot
+#'                        (5) base.ctx.heatmap.real
+#' @param  ...            optional parameters
+#'         normalise      the flag indicating if data need to be normalised;
+#'                        used with the type "base.summary" only
+#'         order          one of the base substitution in \code{kMutBase} to
+#'                        order the result; used with the type "base.spectrum"
+#'                        only
+#'         data.type      either "frac" or "log" indicating if data need to be
+#'                        converted into fraction or Log 10 scale; used with
+#'                        the type "base.ctx.heatmap.real" only
+#' @return                the requested format of the motif matrix
 Transform3 <- function(mut.ctx, type, ...) {
   if (nrow(mut.ctx) != kNumOfMutCtx3) {
     stop("Invalid motif matrix. Must have 96 rows", call. = F)

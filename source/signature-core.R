@@ -43,7 +43,12 @@ RemoveMinorMutationTypes <- function(mut.ctx, threshold = 0.01,
 McBootstrap <- function(mut.ctx, seed = 42) {
   set.seed(seed)
   boot.mut.ctx <- matrix(apply(mut.ctx, 2, function(genome) {
-    rmultinom(1, size = sum(genome), prob = genome)
+    total.counts <- sum(genome)
+    if (total.counts > 0) {
+      return(rmultinom(1, size = total.counts, prob = genome))
+    } else {
+      return(genome)
+    }
   }), ncol = ncol(mut.ctx))
   colnames(boot.mut.ctx) <- colnames(mut.ctx)
   row.names(boot.mut.ctx) <- row.names(mut.ctx)
@@ -167,7 +172,7 @@ ConstSignatures.NMF.rank <- function(nmf, mut.ctx,
 
 #' Adds removed minor mutation types back to the signature matrix with zeros.
 #' @param  mt.sigs        a signature matrix
-#' @return                the signature matrix with all 96 mutation types
+#' @return                the signature matrix with all 96 SSM types
 AddSsm96MinorMutationTypes <- function(mt.sigs) {
   mut.types <- c("CA", "CG", "CT", "TA", "TC", "TG")
   nt.bases <- c("A", "C", "G", "T")
@@ -192,18 +197,59 @@ AddSsm96MinorMutationTypes <- function(mt.sigs) {
   return(all.sigs)
 }
 
+#' Adds removed minor mutation types back to the signature matrix with zeros.
+#' @param  mt.sigs        a signature matrix
+#' @return                the signature matrix with all 9 SIM types
+AddSim9MinorMutationTypes <- function(mt.sigs) {
+  mut.types <- c(paste0(rep(c("ins", "del"), each = 4), ".",
+                        c("C", "T", "2to5", "5p")), "delins")
+  
+  all.sigs <- matrix(rep(0, 9 * ncol(mt.sigs)), ncol = ncol(mt.sigs))
+  colnames(all.sigs) <- colnames(mt.sigs)
+  row.names(all.sigs) <- mut.types
+  
+  if (!all(row.names(mt.sigs) %in% row.names(all.sigs))) {
+    stop("Unrecognised mutation types are detected in signatures", call. = F)
+  }
+  
+  if (nrow(mt.sigs) != 9) {
+    all.sigs[row.names(mt.sigs), ] <- mt.sigs
+  } else {
+    all.sigs <- mt.sigs
+  }
+  
+  return(all.sigs)
+}
+
+#' Adds removed minor mutation types back to the signature matrix with zeros.
+#' @param  mt.sigs        a signature matrix
+#' @return                the signature matrix with all 96 SSM and 9 SIM types
+AddSsim105MinorMutationTypes <- function(mt.sigs) {
+  flag.sim.rows <- sapply(row.names(mt.sigs), grepl, pattern = "[ins|del]")
+  sigs.ssm <- mt.sigs[!flag.sim.rows, ]
+  sigs.sim <- mt.sigs[flag.sim.rows, ]
+  return(rbind(AddSsm96MinorMutationTypes(sigs.ssm),
+               AddSim9MinorMutationTypes(sigs.sim)))
+}
+
 #' Merges multiple signature sets/matrices generated from different tumour
 #' types. Those signature matrices may have different number of rows due to the
 #' removal of minor mutation types. In order to process properly, removed minor
 #' types are added back prior to merging so that each individual signature
-#' matrix has the equal number of rows (96 rows).
+#' matrix has the equal number of rows.
 #' @param  list.sigs      a named list of the \code{MutationalSignatures}
 #'                        objects
-#' @return                a merged signature matrix with 96 rows representing
-#'                        mutation types
-MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
+#' @param  sig.type       the type of signatures; can be either "ssm96"
+#'                        or "ssim105"              
+#' @return                a merged signature matrix with equal rows
+MergeSsm96SignaturesFromTumourTypes <- function(list.sigs, sig.type = "ssm96") {
   if (!is.list(list.sigs)) {
     stop("Invalid MutationalSignatures list", call. = F)
+  }
+  
+  if (!is.character(sig.type) || length(sig.type) != 1 ||
+      !(tolower(sig.type) %in% c("ssm96", "ssim105"))) {
+    stop("Invalid 'sig.type'. Must be either 'ssm96' or 'ssim105'", call. = F)
   }
   
   sig.names <- names(list.sigs)
@@ -219,7 +265,10 @@ MergeSsm96SignaturesFromTumourTypes <- function(list.sigs) {
     
     mt.sigs <- signatures(list.sigs[[name]])
     colnames(mt.sigs) <- paste0(name, ".", colnames(mt.sigs))
-    return(AddSsm96MinorMutationTypes(mt.sigs))
+    if (sig.type == "ssm96") {
+      return(AddSsm96MinorMutationTypes(mt.sigs))
+    }
+    return(AddSsim105MinorMutationTypes(mt.sigs))
   }, list.sigs = list.sigs))
   
   return(sigs)

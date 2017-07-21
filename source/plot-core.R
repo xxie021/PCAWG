@@ -3,6 +3,7 @@ source("source/plot-interface.R")
 # Constants
 kMutBaseColour <- c("deepskyblue", "black", "tomato",
                     "gray", "yellowgreen", "pink")
+kSsimBaseColour <- c(kMutBaseColour, "goldenrod")
 
 PlotSsm6Basics.matrix <- function(mut.ctx, plotter, id, geno.name = NULL,
                                   percentage = FALSE) {
@@ -103,12 +104,13 @@ PlotSsm96Heatmap.matrix <- function(mut.ctx, plotter, geno.type = NULL) {
       sep = "")
 }
 
-PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = NULL,
-                                 log10 = TRUE) {
+PlotMutationTypeCounts.matrix <- function(mut.ctx, plotter, geno.type = NULL,
+                                          log10 = TRUE) {
   data <- reshape2::melt(mut.ctx, varnames = c("type", "id"))
   data$id <- as.factor(data$id)
   if (log10) {
     data$value <- log10(data$value)
+    data$value[which(data$value == -Inf)] <- 0
   }
   
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
@@ -138,7 +140,8 @@ PlotSsmCounts.matrix <- function(mut.ctx, plotter, geno.type = NULL,
 }
 
 PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
-                                                   geno.type = NULL) {
+                                                   geno.type = NULL,
+                                                   free.yaxis = FALSE) {
   geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
                       trimws(geno.type),
                       strsplit(plotter$file.out$name, "\\.")[[1]][1])
@@ -146,12 +149,16 @@ PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
   cat("Info: Start plotting signatures ...\n")
   # Add the prefix "SomaticSignatures::" to distinguish from 
   # the "deconstructSigs" package
-  plot <- SomaticSignatures::plotSignatures(ssm.sigs, normalize = T) + 
+  plot <- SomaticSignatures::plotSignatures(ssm.sigs, normalize = T) +
     scale_y_continuous(labels = scales::percent) +
     scale_fill_manual(values = kMutBaseColour) +
-    labs(title = paste("NMF-based Signatures for", geno.type),
+    labs(title = paste("NMF-based SSM Signatures for", geno.type),
          x = "Mutation Types", y = "Percentage of Mutations") +
     plotter$theme
+  
+  if (free.yaxis) {
+    plot <- plot + facet_grid(signature ~ alteration, scales = "free_y")
+  }
   
   ggsave(plotter$file.out$fullname, plot = plot, 
          width = 7, height = 1.6 + 1.25 * ncol(signatures(ssm.sigs)),
@@ -160,10 +167,53 @@ PlotSsmSignatures.MutationalSignatures <- function(ssm.sigs, plotter,
       sep = "")
 }
 
-PlotSsmSigContribution.MutationalSignatures <- function(ssm.sigs, plotter,
-                                                        geno.type = NULL,
-                                                        order = NULL) {
-  contribution <- samples(ssm.sigs)
+PlotSsim105Signatures.MutationalSignatures <- function(ssim.sigs, plotter,
+                                                       geno.type = NULL,
+                                                       free.yaxis = FALSE) {
+  signatures <- AddSsim105MinorMutationTypes(signatures(ssim.sigs))
+  signatures <- sweep(signatures, 2, colSums(signatures), `/`)
+  if (sum(signatures["delins", ]) == 0) {
+    signatures <- signatures[1:104, ]
+  }
+  
+  data <- reshape2::melt(signatures, varnames = c("full.type", "signature"))
+  data$category <- sub("([ACGTN])([ACGTN]) .+", "\\1>\\2", data$full.type)
+  data$category <- sub("[ins|del].+", "Indel", data$category)
+  data$type <- sub("[ACGTN][ACGTN] (.+)", "\\1", data$full.type)
+  data$category <- factor(data$category, levels = unique(data$category))
+  data$type <- factor(data$type, levels = unique(data$type))
+  
+  geno.type <- ifelse(is.character(geno.type) && trimws(geno.type) != "",
+                      trimws(geno.type),
+                      strsplit(plotter$file.out$name, "\\.")[[1]][1])
+  
+  cat("Info: Start plotting signatures ...\n")
+  plot <- ggplot(data, aes(x = type, y = value, fill = category)) +
+    facet_grid(signature ~ category,
+               scales = ifelse(free.yaxis, "free", "free_x"),
+               space = "free_x") +
+    geom_bar(stat = "identity") +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_manual(values = kSsimBaseColour) +
+    labs(title = paste("NMF-based SSIM Signatures for", geno.type),
+         x = "Mutation Types", y = "Percentage of Mutations") +
+    theme_bw() +
+    plotter$theme +
+    theme(
+      axis.text.x = element_text(hjust = 1, vjust = 0.5, angle = 90)
+    )
+  
+  ggsave(plotter$file.out$fullname, plot = plot,
+         width = 8, height = 1.6 + 1.25 * ncol(signatures(ssim.sigs)),
+         units = "in", limitsize = F)
+  cat("Info: Plot saved in \"", basename(plotter$file.out$fullname), "\"\n",
+      sep = "")
+}
+
+PlotSigContribution.MutationalSignatures <- function(sigs, plotter,
+                                                     geno.type = NULL,
+                                                     order = NULL) {
+  contribution <- samples(sigs)
   contribution <- contribution / rowSums(contribution)
   if (is.character(order) && order %in% colnames(contribution)) {
     row.order <- order(contribution[, which(colnames(contribution) == order)],

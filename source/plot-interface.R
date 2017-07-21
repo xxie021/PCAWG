@@ -3,6 +3,7 @@ suppressPackageStartupMessages(library(SomaticSignatures))
 suppressPackageStartupMessages(library(dendextend))
 
 source("source/transform.R")
+source("source/signature-core.R")
 
 PlotSsm6Basics <- function(mut.ctx, plotter, id, geno.name = NULL,
                            percentage = FALSE) {
@@ -29,15 +30,17 @@ PlotSsm96Heatmap <- function(mut.ctx, plotter, geno.type = NULL) {
   UseMethod("PlotSsm96Heatmap", mut.ctx)
 }
 
-PlotSsmCounts <- function(mut.ctx, plotter, geno.type = NULL, log10 = TRUE) {
+PlotMutationTypeCounts <- function(mut.ctx, plotter, geno.type = NULL,
+                                   log10 = TRUE) {
   if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
-  UseMethod("PlotSsmCounts", mut.ctx)
+  UseMethod("PlotMutationTypeCounts", mut.ctx)
 }
 
-PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL) {
+PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL,
+                              free.yaxis = FALSE) {
   if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
@@ -45,13 +48,21 @@ PlotSsmSignatures <- function(ssm.sigs, plotter, geno.type = NULL) {
   UseMethod("PlotSsmSignatures", ssm.sigs)
 }
 
-PlotSsmSigContribution <- function(ssm.sigs, plotter, geno.type = NULL,
-                                   order = NULL) {
+PlotSsim105Signatures <- function(ssim.sigs, plotter, geno.type = NULL,
+                                  free.yaxis = FALSE) {
   if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
     stop("Invalid 'plotter'", call. = F)
   }
   
-  UseMethod("PlotSsmSigContribution", ssm.sigs)
+  UseMethod("PlotSsim105Signatures", ssim.sigs)
+}
+
+PlotSigContribution <- function(sigs, plotter, geno.type = NULL, order = NULL) {
+  if (!is.object(plotter) || !inherits(plotter, "XPlotter")) {
+    stop("Invalid 'plotter'", call. = F)
+  }
+  
+  UseMethod("PlotSigContribution", sigs)
 }
 
 PlotSigPrevalence <- function(prevalence, plotter, n.samples = NULL) {

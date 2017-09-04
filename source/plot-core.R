@@ -398,7 +398,8 @@ PlotLineComparison.list <- function(list.stats, plotter, palette = "Set1",
 }
 
 PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
-                                  group.frame = TRUE, topic = NULL) {
+                                  group.frame = TRUE, topic = NULL,
+                                  ref.line = 0) {
   d <- as.dendrogram(fit)
   
   if (is.null(n.clust)) {
@@ -441,7 +442,8 @@ PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
         width = 8, height = max(6, 3.5 + 0.11 * nleaves(d)))
   }
   tryCatch({
-    par(bg = "grey92", mar = c(3, 8, 4, 3))
+    #par(bg = "grey92", mar = c(3, 8, 4, 3))
+    par(mar = c(3, 8, 4, 3))
     plot_horiz.dendrogram(d, xlim = c(h.max, 0), cex.axis = 0.9)
     title(main = title, line = -3, outer = T)
     if (group.frame) {
@@ -449,6 +451,9 @@ PlotDendrogram.hclust <- function(fit, file.out, n.clust = NULL,
                       lower_rect = -0.25 * h.max, lwd = 1.1)
     }
     abline(v = h.cut, col = "#F38630", lty = "dashed", lwd = 2)
+    if (is.numeric(ref.line) && ref.line > 0 && ref.line < 1) {
+      abline(v = ref.line, col = "navy", lty = "dashed", lwd = 2)
+    }
   }, finally = {
     dev.off()
   })

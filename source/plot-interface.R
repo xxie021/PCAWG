@@ -99,7 +99,7 @@ PlotLineComparison <- function(list.stats, plotter, palette = "Set1",
 }
 
 PlotDendrogram <- function(fit, file.out, n.clust = NULL,
-                           group.frame = TRUE, topic = NULL) {
+                           group.frame = TRUE, topic = NULL, ref.line = 0) {
   if (!is.object(file.out) || !inherits(file.out, "XFileOut")) {
     stop("Invalid 'file.out'", call. = F)
   }
